@@ -3,7 +3,7 @@ from app.db.storage_base import Storage
 from app.models import AccountInfo
 from fastapi import HTTPException
 
-class AccountsStorage(Storage):
+class AccountsStorage(Storage[AccountInfo]):
     def __init__(self) -> None:
         path = Path(__file__).parent / "accounts.json"
         super().__init__(path)
@@ -15,8 +15,8 @@ class AccountsStorage(Storage):
         self.write(user.username, user)
         return user
 
-    def get_account_info(self, username: str) -> AccountInfo:
+    def get_account_info(self, username: str) -> AccountInfo | None:
         return self.read(username)
     
-    def get_account_role(self, username: str) -> str:
+    def get_account_role(self, username: str) -> str | None:
         return self.read(username).role
