@@ -1,6 +1,6 @@
 from pathlib import Path
 from app.db.storage_base import Storage
-from app.models import UserInfo
+from app.models import AccountInfo
 from fastapi import HTTPException
 
 class AccountsStorage(Storage):
@@ -8,15 +8,15 @@ class AccountsStorage(Storage):
         path = Path(__file__).parent / "accounts.json"
         super().__init__(path)
 
-    def add_new_user(self, user: UserInfo) -> UserInfo:
+    def add_new_account(self, user: AccountInfo) -> AccountInfo:
         if self.read(user.username) is not None:
             raise HTTPException(status_code=400, detail="User already exists")
 
         self.write(user.username, user)
         return user
 
-    def get_user_info(self, username: str) -> UserInfo:
+    def get_account_info(self, username: str) -> AccountInfo:
         return self.read(username)
     
-    def get_user_role(self, username: str) -> str:
+    def get_account_role(self, username: str) -> str:
         return self.read(username).role
