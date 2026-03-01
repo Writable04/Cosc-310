@@ -3,7 +3,7 @@ from app.db.storage_accounts import AccountsStorage
 
 class Authentication():
     def __init__(self, storage: AccountsStorage):
-        self.pwd_context = CryptContext(schemes=["bcrypt"]) 
+        self.encryption = CryptContext(schemes=["bcrypt"]) 
         self.storage = storage
 
 
@@ -19,7 +19,7 @@ class Authentication():
         if account_info is None:
             return False
 
-        return self.pwd_context.verify(password, account_info.password)
+        return self.encryption.verify(password, account_info.password)
     
 
     def _is_password_valid(self, password: str) -> bool:
@@ -30,4 +30,4 @@ class Authentication():
 
 
     def _encrypt_password(self, password: str) -> str:
-        return self.pwd_context.hash(password)
+        return self.encryption.hash(password)
