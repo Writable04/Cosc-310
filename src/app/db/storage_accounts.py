@@ -18,7 +18,11 @@ class AccountsStorage(Storage[AccountInfo]):
         return account
 
     def get_account_info(self, username: str) -> AccountInfo | None:
-        return self.read(username)
+        data = self.read(username)
+        if data is None:
+            return None
+            
+        return AccountInfo(**data)
     
     def get_account_role(self, username: str) -> str | None:
         return self.read(username).role
