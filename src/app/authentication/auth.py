@@ -8,16 +8,8 @@ class Authentication():
 
 
     def encrypt_password(self, password: str) -> str:
-        return self._encrypt_password(password)
-
-    
-    def verify_password(self, username: str, password: str) -> bool:
-        account_info = self.storage.get_account_info(username)
-        if account_info is None:
-            return False
-
-        return self.encryption.verify(password, account_info.password)
-    
-
-    def _encrypt_password(self, password: str) -> str:
         return self.encryption.hash(password)
+    
+
+    def verify_password(self, password: str, encrypted_password: str) -> bool:
+        return self.encryption.verify(password, encrypted_password)

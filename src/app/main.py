@@ -29,3 +29,12 @@ def register(username: str, password: str, validatated_password: str, role: str)
         return {"status": "success", "message": "User registered successfully"}
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+@app.post("/login/{username}")
+def login(username: str, password: str):
+    try:
+        registration.login(username, password)
+        return {"status": "success", "message": "User logged in successfully"}
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))

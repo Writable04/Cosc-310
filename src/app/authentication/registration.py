@@ -8,6 +8,19 @@ class Registration:
         self.storage = storage
         self.authentication = authentication
 
+
+    def login(self, username: str, password: str) -> AccountInfo:
+        account = self.storage.get_account_info(username)
+        if account is None:
+            raise ValueError("Account not found")
+
+        if not self.authentication.verify_password(password, account.password):
+            raise ValueError("Invalid password")
+
+        # Return the encrypted password to be used as authentication token
+        return account.password
+
+
     def register(self, username: str, password: str, validatated_password: str, role: str) -> AccountInfo:
         if self.storage.get_account_info(username) is not None:
             raise ValueError("Username already exists")
@@ -21,7 +34,9 @@ class Registration:
         encrypted_password = self.authentication.encrypt_password(password)
         account = AccountInfo(username=username, password=encrypted_password, role=role)
 
-        return self.storage.add_new_account(account)
+        self.storage.add_new_account(account)
+
+        return self.login(username, password)
     
     
     def _is_password_valid(self, password: str) -> bool:
