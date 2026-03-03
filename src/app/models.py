@@ -5,6 +5,7 @@ class HealthResponse(BaseModel):
     version: str
 
 class AccountInfo(BaseModel):
+    token: str
     password: str
     username: str
     role: str
