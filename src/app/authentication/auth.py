@@ -21,7 +21,7 @@ class Authentication():
         return str(uuid4())
 
 
-    def authenticate(self, username: str, token: str):
+    def authenticate(self, username: str, token: str) -> bool:
         if self._is_token_valid(username, token):
             return True
         else:
