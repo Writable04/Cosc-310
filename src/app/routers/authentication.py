@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app import __version__
 from app.repositories.storage_accounts import AccountsStorage
 from app.services.authentication.auth import Authentication
 from app.services.authentication.registration import Registration
@@ -19,8 +18,7 @@ def require_auth(username: str, token: str):
 
 @router.get("/test/auth/{username}/{token}", dependencies=[Depends(require_auth)])
 def test_authentication():
-    return {"status": "ok", "version": __version__}
-
+    return {"status": "ok" }
 
 @router.post("/register/{username}")
 def register(username: str, password: str, validatated_password: str, role: str):
