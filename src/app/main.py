@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app import __version__
-from app.models import HealthResponse
+from app.schemas.baseSchema import HealthResponse
 from fastapi import FastAPI
 from app.routers import resturants
 
