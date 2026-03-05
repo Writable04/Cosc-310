@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from app.data.db.storage_base import Storage
+from app.repositories.storage_base import Storage
 
 @pytest.fixture
 def storage(tmp_path: Path) -> Storage:

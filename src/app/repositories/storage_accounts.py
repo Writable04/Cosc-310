@@ -1,10 +1,10 @@
 from pathlib import Path
-from app.data.db.storage_base import Storage
+from app.repositories.storage_base import Storage
 from app.schemas.authenticationSchema import AccountInfo
 
 
 class AccountsStorage(Storage[AccountInfo]):
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         path = path or Path(__file__).parent / "accounts.json"
         super().__init__(path)
 

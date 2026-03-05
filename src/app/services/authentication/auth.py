@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from app.data.db.storage_accounts import AccountsStorage
+from app.repositories.storage_accounts import AccountsStorage
 
 class Authentication():
     def __init__(self, storage: AccountsStorage):
@@ -7,10 +7,7 @@ class Authentication():
         self.storage = storage
 
 
-    def check_and_encrypt_password(self, password: str) -> str:
-        if not self._is_password_valid(password):
-            raise ValueError("Password is not valid")
-
+    def encrypt_password(self, password: str) -> str:
         return self._encrypt_password(password)
 
     
@@ -21,13 +18,6 @@ class Authentication():
 
         return self.encryption.verify(password, account_info.password)
     
-
-    def _is_password_valid(self, password: str) -> bool:
-        is_length_valid = len(password) >= 8
-        is_contains_uppercase = any(char.isupper() for char in password)
-        is_contains_number = any(char.isdigit() for char in password)
-        return is_length_valid and is_contains_uppercase and is_contains_number
-
 
     def _encrypt_password(self, password: str) -> str:
         return self.encryption.hash(password)
