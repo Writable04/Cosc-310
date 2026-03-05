@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from app.data.db.storage_accounts import AccountsStorage
+from app.repositories.storage_accounts import AccountsStorage
 from app.schemas.authenticationSchema import AccountInfo
 
 
