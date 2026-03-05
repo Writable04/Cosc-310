@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from app.data.db.storage_accounts import AccountsStorage
+from app.repositories.storage_accounts import AccountsStorage
 
 class Authentication():
     def __init__(self, storage: AccountsStorage):
