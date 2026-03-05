@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
-from app.db.storage_accounts import AccountsStorage
-from app.models import AccountInfo
+from app.data.db.storage_accounts import AccountsStorage
+from app.schemas.authenticationSchema import AccountInfo
 
 
 @pytest.fixture

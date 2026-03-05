@@ -1,31 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
 from app import __version__
-from app.authentication.auth import Authentication
-from app.authentication.registration import Registration
-from app.db.storage_accounts import AccountsStorage
-from app.models import HealthResponse
+from fastapi import FastAPI
+from app.routers import resturants
+from app.routers import authentication
 
 app = FastAPI(
     title="COSC 310 Project",
     version=__version__,
 )
 
-
-storage = AccountsStorage()
-authentication = Authentication(storage)
-registration = Registration(storage, authentication)
-
-
-@app.get("/")
-def root() -> HealthResponse:
-    return {"status": "ok", "version": __version__}
-
-
-@app.post("/register/{username}")
-def register(username: str, password: str, validatated_password: str, role: str):
-    try:
-        registration.register(username, password, validatated_password, role)
-        return {"status": "success", "message": "User registered successfully"}
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error))
+app.include_router(resturants.router, prefix = "/resturants")
+app.include_router(authentication.router, prefix = "/authentication")
