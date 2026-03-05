@@ -1,22 +1,24 @@
 import json
 from pathlib import Path
+from typing import Generic, TypeVar
 
-StorageDataTypes = dict | str | int | float | bool | list | None
+T = TypeVar("T")
 
-class Storage:
+
+class Storage(Generic[T]):
     def __init__(self, path: Path) -> None:
         self.path = path
 
-    def read(self, key: str) -> StorageDataTypes:
+    def read(self, key: str) -> T | None:
         data = self._load()
         return data.get(key)
 
-    def write(self, key: str, value: StorageDataTypes) -> None:
+    def write(self, key: str, value: T) -> None:
         data = self._load()
         data[key] = value
         self._save(data)
 
-    def update(self, key: str, value: StorageDataTypes) -> None:
+    def update(self, key: str, value: T) -> None:
         data = self._load()
         existing = data.get(key)
         if isinstance(existing, dict) and isinstance(value, dict):
