@@ -4,6 +4,7 @@ from app import __version__
 from fastapi import FastAPI
 from app.routers import resturants
 from app.routers import authentication
+from app.schemas.baseSchema import HealthResponse
 
 app = FastAPI(
     title="COSC 310 Project",
@@ -12,7 +13,7 @@ app = FastAPI(
 
 
 @app.get("/")
-def root() -> dict:
+def root() -> HealthResponse:
     return {"status": "ok", "version": __version__}
 
 
