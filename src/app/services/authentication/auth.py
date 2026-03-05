@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from passlib.context import CryptContext
-from app.db.storage_accounts import AccountsStorage
+from app.repositories.storage_accounts import AccountsStorage
 from uuid import uuid4
 
 class Authentication():

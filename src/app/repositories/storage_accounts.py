@@ -1,6 +1,6 @@
 from pathlib import Path
-from app.db.storage_base import Storage
-from app.models import AccountInfo
+from app.repositories.storage_base import Storage
+from app.schemas.authenticationSchema import AccountInfo
 
 
 class AccountsStorage(Storage[AccountInfo]):
