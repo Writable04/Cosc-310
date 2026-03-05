@@ -1,6 +1,6 @@
-from app.authentication.auth import Authentication
-from app.db.storage_accounts import AccountsStorage
-from app.models import AccountInfo
+from app.services.authentication.auth import Authentication
+from app.repositories.storage_accounts import AccountsStorage
+from app.schemas.authenticationSchema import AccountInfo
 
 
 class Registration:

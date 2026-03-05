@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from app.data.db.storage_accounts import AccountsStorage
-from app.repositories.authentication.auth import Authentication
-from app.repositories.authentication.registration import Registration
+from app.repositories.storage_accounts import AccountsStorage
+from app.services.authentication.auth import Authentication
+from app.services.authentication.registration import Registration
 
 router = APIRouter()
 

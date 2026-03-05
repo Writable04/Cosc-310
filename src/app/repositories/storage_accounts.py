@@ -1,5 +1,5 @@
 from pathlib import Path
-from app.data.db.storage_base import Storage
+from app.repositories.storage_base import Storage
 from app.schemas.authenticationSchema import AccountInfo
 
 
