@@ -8,3 +8,11 @@ class Resturant(BaseModel):
     deliveryDistance: str = "0"
     open: bool = False
 
+
+class deliveryResturant(BaseModel):
+    restaurant_id: int
+    food_item: str
+    delivery_time: str 
+    delivery_distance: str
+    customer_rating: str
+
