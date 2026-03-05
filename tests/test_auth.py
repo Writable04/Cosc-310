@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock
 
-from app.authentication.auth import Authentication
-from app.models import AccountInfo
+from app.services.authentication.auth import Authentication
+from app.schemas.authenticationSchema import AccountInfo
 
 @pytest.fixture
 def mock_storage() -> MagicMock:
