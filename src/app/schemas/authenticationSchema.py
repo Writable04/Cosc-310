@@ -5,3 +5,8 @@ class AccountInfo(BaseModel):
     password: str
     username: str
     role: str
+
+class AuthenticationResponse(BaseModel):
+    token: str
+    status: str
+    message: str
