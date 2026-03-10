@@ -30,3 +30,10 @@ class AccountsStorage(Storage[AccountInfo]):
             return None
             
         return AccountInfo(**data).role
+
+    def get_account_email(self, username: str) -> str | None:
+        data = self.read(username)
+        if data is None:
+            return None
+            
+        return AccountInfo(**data).email
