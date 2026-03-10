@@ -23,16 +23,35 @@ def test_encrypt_password(auth: Authentication) -> None:
 def test_verify_password_valid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin"
+        username="John", password=encrypted_password, role="admin", token="test-token"
     )
 
-    assert auth.verify_password("John", "Password1") is True
+    assert auth.verify_password("Password1", encrypted_password) is True
 
 
 def test_verify_password_invalid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin"
+        username="John", password=encrypted_password, role="admin", token="test-token"
     )
 
-    assert auth.verify_password("John", "OtherPassword") is False
+    assert auth.verify_password("OtherPassword", encrypted_password) is False
+
+
+def test_is_token_valid_when_account_missing(auth: Authentication, mock_storage: MagicMock) -> None:
+    mock_storage.get_account_info.return_value = None
+    assert auth._is_token_valid("idannn", "token") is False
+
+
+def test_is_token_valid_true(auth: Authentication, mock_storage: MagicMock) -> None:
+    mock_storage.get_account_info.return_value = AccountInfo(
+        username="Idannnnn", password="password123", role="admin", token="correct"
+    )
+    assert auth._is_token_valid("John", "wrong") is False
+
+
+def test_is_token_valid_false(auth: Authentication, mock_storage: MagicMock) -> None:
+    mock_storage.get_account_info.return_value = AccountInfo(
+        username="Idan", password="password123", role="admin", token="correct"
+    )
+    assert auth._is_token_valid("John", "correct") is True
