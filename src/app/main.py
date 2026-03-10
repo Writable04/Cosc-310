@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app import __version__
 from fastapi import FastAPI
-from app.routers import resturants
+from app.routers import dataset
 from app.routers import authentication
 from app.schemas.baseSchema import HealthResponse
 
@@ -18,5 +18,5 @@ def root() -> HealthResponse:
 
 
 
-app.include_router(resturants.router, prefix = "/resturants")
+app.include_router(dataset.router, prefix = "/dataset")
 app.include_router(authentication.router, prefix = "/authentication")

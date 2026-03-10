@@ -2,11 +2,11 @@ from pathlib import Path
 from app.schemas.menuSchema import Menu
 from app.repositories.storage_base_csv import CSVStorage
 
-class MenuStorage:
+class MenuStorage(CSVStorage):
     def __init__(self, path: Path | None = None):
-        path = path or Path(__file__).parent / "menus.csv"
+        path = path or Path(__file__).parent.parent / "data/resturantData/menus.csv"
         fields = list(Menu.model_fields.keys())
-        self.storage = CSVStorage(path, fields)
+        super().__init__(path,fields)
     
     def new_Menu(self, menu: Menu):
         self.storage.write_row(menu.dict())
@@ -24,3 +24,10 @@ class MenuStorage:
         if row:
             return Menu(**row)
         return None
+
+    def remove_menu(self, restaurant_id: int):
+        row = self.find_by("menu_id", str(menu_id))
+        if not row:
+            return None
+        self.delete("menu_id", str(menu_id))
+        return Menu(**row)
