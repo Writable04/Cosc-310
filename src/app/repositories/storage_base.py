@@ -21,7 +21,9 @@ class Storage(Generic[T]):
     def update(self, key: str, value: T) -> None:
         data = self._load()
         existing = data.get(key)
-        if isinstance(existing, dict) and isinstance(value, dict):
+        if existing is None:
+            raise ValueError("Key not found")
+        elif isinstance(existing, dict) and isinstance(value, dict):
             data[key] = {**existing, **value}
         else:
             data[key] = value

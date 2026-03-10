@@ -8,7 +8,23 @@ class Registration:
         self.storage = storage
         self.authentication = authentication
 
-    def register(self, username: str, password: str, validatated_password: str, role: str, email: str) -> AccountInfo:
+
+    def login(self, username: str, password: str, token: str | None = None) -> str:
+        if token is None:
+            token = self.authentication.generate_new_token()
+            self.storage.update_token(username, token)
+
+        account = self.storage.get_account_info(username)
+        if account is None:
+            raise ValueError("Account not found")
+
+        if not self.authentication.verify_password(password, account.password):
+            raise ValueError("Invalid password")
+
+        return token
+
+
+    def register(self, username: str, password: str, validatated_password: str, role: str, email: str) -> str:
         if self.storage.get_account_info(username) is not None:
             raise ValueError("Username already exists")
 
@@ -20,11 +36,14 @@ class Registration:
 
         if password != validatated_password:
             raise ValueError("Passwords do not match")
-        
+            
         encrypted_password = self.authentication.encrypt_password(password)
-        account = AccountInfo(username=username, password=encrypted_password, role=role, email=email)
+        token = self.authentication.generate_new_token()
+        account = AccountInfo(username=username, password=encrypted_password, role=role, email=email, token=token)
 
-        return self.storage.add_new_account(account)
+        self.storage.add_new_account(account)
+
+        return self.login(username, password, token)
     
     
     def _is_password_valid(self, password: str) -> bool:
