@@ -23,7 +23,7 @@ def test_encrypt_password(auth: Authentication) -> None:
 def test_verify_password_valid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin"
+        username="John", password=encrypted_password, role="admin", email="idan@gmail.com"
     )
 
     assert auth.verify_password("John", "Password1") is True
@@ -32,7 +32,7 @@ def test_verify_password_valid(auth: Authentication, mock_storage: MagicMock) ->
 def test_verify_password_invalid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin"
+        username="John", password=encrypted_password, role="admin", email="idan@gmail.com"
     )
 
     assert auth.verify_password("John", "OtherPassword") is False
