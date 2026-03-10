@@ -1,6 +1,8 @@
-from fastapi import Depends, HTTPException
-from app.routers.dependencies import require_auth, registration, router
+from fastapi import APIRouter, Depends, HTTPException
+from app.routers.dependencies import require_auth, registration
 from app.schemas.authenticationSchema import AuthenticationResponse
+
+router = APIRouter()
 
 @router.get("/test/auth/{username}/{token}", dependencies=[Depends(require_auth)])
 def test_authentication():
