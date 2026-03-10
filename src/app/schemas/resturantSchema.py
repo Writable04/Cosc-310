@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Resturant(BaseModel):
-    resturant_id: int
+    restaurant_id: int
     name: str
     cusine: str
     rating: float = 0

@@ -53,3 +53,8 @@ class CSVStorage:
         if updated:
             self.overwrite(rows)
         return updated
+    #deletes
+    def delete(self, column, value):
+        rows = self.read_all()
+        rows = [row for row in rows if row[column] != str(value)]
+        self.overwrite(rows)
