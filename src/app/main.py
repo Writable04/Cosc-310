@@ -17,5 +17,6 @@ def root() -> HealthResponse:
     return {"status": "ok", "version": __version__}
 
 
+
 app.include_router(resturants.router, prefix = "/resturants")
 app.include_router(authentication.router, prefix = "/authentication")

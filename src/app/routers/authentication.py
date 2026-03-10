@@ -10,7 +10,7 @@ authentication = Authentication(storage)
 registration = Registration(storage, authentication)
 
 
-@router.post("/register/{username}")
+@router.post("/register/{username}") 
 def register(username: str, password: str, validatated_password: str, role: str):
     try:
         registration.register(username, password, validatated_password, role)
