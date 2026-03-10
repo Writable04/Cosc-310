@@ -40,7 +40,7 @@ def test_verify_password_invalid(auth: Authentication, mock_storage: MagicMock) 
 
 def test_is_token_valid_when_account_missing(auth: Authentication, mock_storage: MagicMock) -> None:
     mock_storage.get_account_info.return_value = None
-    assert auth._is_token_valid("unknown_user", "any-token") is False
+    assert auth._is_token_valid("idannn", "token") is False
 
 
 def test_is_token_valid_true(auth: Authentication, mock_storage: MagicMock) -> None:
