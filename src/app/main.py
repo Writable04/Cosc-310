@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 
 from app import __version__
-from fastapi import FastAPI
-from app.routers import dataset
-from app.routers import authentication
+from app.routers import authentication, resturants
 from app.schemas.baseSchema import HealthResponse
 
 app = FastAPI(
