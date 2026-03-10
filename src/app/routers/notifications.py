@@ -1,6 +1,7 @@
-from fastapi import Depends, HTTPException
-from app.routers.dependencies import router, storage, notifications_server, require_auth
+from fastapi import APIRouter, Depends, HTTPException
+from app.routers.dependencies import storage, notifications_server, require_auth
 
+router = APIRouter()
 
 @router.post("/send/{username}/{token}", dependencies=[Depends(require_auth)])
 def send_notification(customer_username: str, subject: str, msg: str):
