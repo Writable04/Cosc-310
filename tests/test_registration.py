@@ -23,17 +23,20 @@ def registration(mock_storage: AccountsStorage, mock_auth: Authentication) -> Re
 
 
 def test_register_success(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
 
-    mock_storage.get_account_info.return_value = None
+    # First call: user does not exist; second call: from login() after add_new_account
+    mock_storage.get_account_info.side_effect = [None, account]
     mock_storage.add_new_account.return_value = account
     mock_auth.encrypt_password.return_value = account.password
+    mock_auth.generate_new_token.return_value = "test-token"
+    mock_auth.verify_password.return_value = True
 
-    assert registration.register(account.username, account.password, account.password, account.role) is account
+    assert registration.register(account.username, account.password, account.password, account.role) == "test-token"
 
 
 def test_register_account_already_exists(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
 
     mock_storage.get_account_info.return_value = account
     mock_storage.add_new_account.return_value = account
@@ -44,7 +47,7 @@ def test_register_account_already_exists(registration: Registration, mock_storag
 
 
 def test_register_account_password_does_not_match(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
@@ -54,7 +57,7 @@ def test_register_account_password_does_not_match(registration: Registration, mo
 
 
 def test_register_account_password_is_not_valid(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnn", role="admin")
+    account = AccountInfo(username="idan", password="Idannnn", role="admin", token="test-token")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
