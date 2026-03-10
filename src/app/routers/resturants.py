@@ -1,8 +1,6 @@
-from fastapi import APIRouter
 from app.schemas.resturantSchema import Resturant
 from app.repositories.resturant_repo import load_resturants, save_resturants, save_foodDelivery
-
-router = APIRouter()
+from app.routers.dependencies import router
 
 resturants = []
 
