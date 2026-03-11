@@ -11,16 +11,14 @@ def storage(tmp_path):
     file = tmp_path / "items.csv"
     return ItemStorage(path=file)
 
-
 @pytest.fixture
 def sample_item():
-    return Item(
+    return Item.model_construct(
         item_id=1,
         name="Burger",
         price=9.99,
         menu_id=5
     )
-
 
 def test_new_item(storage, sample_item):
     item = storage.new_item(sample_item)

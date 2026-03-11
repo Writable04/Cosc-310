@@ -12,7 +12,7 @@ def storage(tmp_path: Path) -> AccountsStorage:
 
 @pytest.fixture
 def account() -> AccountInfo:
-    return AccountInfo(username="alice", password="secret123", role="user")
+    return AccountInfo(username="alice", password="secret123", role="user", token="test-token")
 
 
 def test_add_new_account_success(storage: AccountsStorage, account: AccountInfo) -> None:

@@ -2,7 +2,6 @@ from pathlib import Path
 import pytest
 from app.repositories.storage_base_csv import CSVStorage
 
-
 @pytest.fixture
 def storage(tmp_path):
     file = tmp_path / "test.csv"

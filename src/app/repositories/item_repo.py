@@ -9,18 +9,18 @@ class ItemStorage(CSVStorage):
         super().__init__(path,fields)
     
     def new_item(self, item: Item):
-        self.storage.write_row(item.dict())
+        self.write_row(item.dict())
         return item
 
     def find_item(self, item_id: int):
-        row = self.storage.find_by("item_id", str(item_id))
+        row = self.find_by("item_id", str(item_id))
         if row:
             return Item(**row)
         return None
 
     def update_item(self, item_id: int, updated_data: dict):
-        self.storage.update("item_id", str(item_id), updated_data)
-        row = self.storage.find_by("item_id", str(item_id))
+        self.update("item_id", str(item_id), updated_data)
+        row = self.find_by("item_id", str(item_id))
         if row:
             return Item(**row)
         return None
