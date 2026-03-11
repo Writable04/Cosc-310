@@ -24,6 +24,11 @@ class AccountsStorage(Storage[AccountInfo]):
             
         return AccountInfo(**data)
     
+
+    def update_token(self, username: str, token: str) -> None:
+        self.update(username, {"token": token})
+
+
     def get_account_role(self, username: str) -> str | None:
         data = self.read(username)
         if data is None:

@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 
 from app import __version__
-from fastapi import FastAPI
-from app.routers import dataset
-from app.routers import authentication
+from app.routers import authentication, dataset
 from app.schemas.baseSchema import HealthResponse
 
 app = FastAPI(
@@ -15,8 +13,6 @@ app = FastAPI(
 @app.get("/")
 def root() -> HealthResponse:
     return {"status": "ok", "version": __version__}
-
-
 
 app.include_router(dataset.router, prefix = "/dataset")
 app.include_router(authentication.router, prefix = "/authentication")

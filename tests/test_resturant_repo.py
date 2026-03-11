@@ -1,65 +1,63 @@
-from pathlib import Path
 import pytest
-
+from pathlib import Path
 from app.repositories.resturant_repo import ResturantStorage
 from app.schemas.resturantSchema import Resturant
 
 
 @pytest.fixture
 def storage(tmp_path):
-    file = tmp_path / "restaurants.csv"
-    return ResturantStorage(path=file)
-
+    test_file = tmp_path / "restaurants.csv"
+    storage = ResturantStorage(path=test_file)
+    return storage
 
 @pytest.fixture
-def sample_resturant():
-    return Resturant(
+def sample_restaurant():
+    return Resturant.model_construct(
         restaurant_id=1,
-        name="Pizza Place",
-        cuisine="Italian",
-        rating="4"
+        name="Bobs burgers",
+        raiting="4",
+        cuisine="Italian"
     )
 
+def test_new_resturant(storage, sample_restaurant):
+    storage.new_resturant(sample_restaurant)
 
-def test_new_resturant(storage, sample_resturant):
-    result = storage.new_resturant(sample_resturant)
+    rows = storage.read_all()
 
+    assert len(rows) == 1
+    assert rows[0]["restaurant_id"] == "1"
+    assert rows[0]["name"] == "Bobs burgers"
+
+
+def test_find_resturant(storage, sample_restaurant):
+    storage.new_resturant(sample_restaurant)
+
+    result = storage.find_resturant(1)
+
+    assert result is not None
     assert result.restaurant_id == 1
-
-    row = storage.find_resturant(1)
-    assert row is not None
-    assert row.name == "Pizza Place"
+    assert result.name == "Bobs burgers"
 
 
-def test_find_resturant(storage, sample_resturant):
-    storage.new_resturant(sample_resturant)
+def test_update_resturant(storage, sample_restaurant):
+    storage.new_resturant(sample_restaurant)
 
-    found = storage.find_resturant(1)
-
-    assert found is not None
-    assert found.restaurant_id == 1
-    assert found.name == "Pizza Place"
-
-
-def test_update_resturant(storage, sample_resturant):
-    storage.new_resturant(sample_resturant)
-
-    updated = storage.update_resturant(1, {"name": "Better Pizza"})
+    updated = storage.update_resturant(1, {"name": "bobs better burgers"})
 
     assert updated is not None
-    assert updated.name == "Better Pizza"
+    assert updated.name == "bobs better burgers"
 
-    row = storage.find_resturant(1)
-    assert row.name == "Better Pizza"
+    result = storage.find_resturant(1)
+    assert result.name == "bobs better burgers"
 
 
-def test_remove_resturant(storage, sample_resturant):
-    storage.new_resturant(sample_resturant)
+def test_remove_resturant(storage, sample_restaurant):
+    storage.new_resturant(sample_restaurant)
 
     removed = storage.remove_resturant(1)
 
     assert removed is not None
     assert removed.restaurant_id == 1
 
-    row = storage.find_resturant(1)
-    assert row is None
+    result = storage.find_resturant(1)
+    assert result is None
