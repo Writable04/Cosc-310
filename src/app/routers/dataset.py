@@ -13,7 +13,7 @@ items = []
 #resturants
 @router.post("/restaurant")
 def post_resturant(restaurant: Resturant):
-    resturants.append(restaurant.model_dump())
+    resturants.append(restaurant.dict())
     resturant_storage.new_resturant(restaurant)
     return resturants
 
@@ -24,7 +24,7 @@ def get_resturant(restaurant_id: int):
 @router.put("/restaurant/{restaurant_id}")
 def setResturant(restaurant_id: int, resturant: Resturant):
     resturant_storage.update_resturant(restaurant_id, resturant.dict())
-    return resturant.model_dump()
+    return resturant.dict()
 
 @router.delete("/restaurant/{restaurant_id}")
 def removeRestaurant(restaurant_id: int):
