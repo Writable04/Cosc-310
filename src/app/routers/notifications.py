@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.routers.dependencies import storage, notifications_server, require_auth
+from app.routers.dependencies import notifications_server, require_auth, accounts_storage
 
 router = APIRouter()
 
 @router.post("/send/{username}/{token}", dependencies=[Depends(require_auth)])
 def send_notification(customer_username: str, subject: str, msg: str):
-    email = storage.get_account_email(customer_username)
+    email = accounts_storage.get_account_email(customer_username)
     if (email is not None):
         try:
             notifications_server.send_notification(subject, msg, email)
