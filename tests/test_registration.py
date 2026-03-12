@@ -23,7 +23,7 @@ def registration(mock_storage: AccountsStorage, mock_auth: Authentication) -> Re
 
 
 def test_register_success(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="test-token")
 
     # First call: user does not exist; second call: from login() after add_new_account
     mock_storage.get_account_info.side_effect = [None, account]
@@ -32,38 +32,38 @@ def test_register_success(registration: Registration, mock_storage: AccountsStor
     mock_auth.generate_new_token.return_value = "test-token"
     mock_auth.verify_password.return_value = True
 
-    assert registration.register(account.username, account.password, account.password, account.role) == "test-token"
+    assert registration.register(account.username, account.password, account.password, account.role, account.email) == "test-token"
 
 
 def test_register_account_already_exists(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="")
 
     mock_storage.get_account_info.return_value = account
     mock_storage.add_new_account.return_value = account
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Username already exists"):
-        registration.register(account.username, account.password, account.password, account.role)
+        registration.register(account.username, account.password, account.password, account.role, account.email)
 
 
 def test_register_account_password_does_not_match(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", token="test-token")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Passwords do not match"):
-        registration.register(account.username, account.password, "Idannnnnnn1234", account.role)
+        registration.register(account.username, account.password, "Idannnnnnn1234", account.role, account.email)
 
 
 def test_register_account_password_is_not_valid(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnn", role="admin", token="test-token")
+    account = AccountInfo(username="idan", password="Idannnn", role="admin", email="idan@gmail.com", token="")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Password is not valid"):
-        registration.register(account.username, account.password, account.password, account.role)
+        registration.register(account.username, account.password, account.password, account.role, account.email)
 
 
 def test_password_validation_too_short(registration: Registration) -> None:
@@ -80,3 +80,14 @@ def test_password_validation_no_number(registration: Registration) -> None:
 
 def test_password_validation_valid(registration: Registration) -> None:
     assert registration._is_password_valid("Idan12345678") is True
+
+
+def test_email_validation_invalid(registration: Registration) -> None:
+    assert registration._is_email_valid("idan") is False
+    assert registration._is_email_valid("idan@fsdafdf") is False
+    assert registration._is_email_valid("idan@$%^&.com") is False
+
+
+
+def test_email_validation_valid(registration: Registration) -> None:
+    assert registration._is_email_valid("idan@gmail.com") is True
