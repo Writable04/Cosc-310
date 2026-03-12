@@ -2,7 +2,6 @@ from fastapi import FastAPI
 
 from app import __version__
 from fastapi import FastAPI
-from app.routers import resturants
 from app.routers import authentication
 from app.routers import notifications
 from app.routers import authentication, dataset
