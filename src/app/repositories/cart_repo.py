@@ -26,7 +26,6 @@ class CartStorage(Storage[Cart]):
 
     def removeCart(self, UserID):
         theCart = self.read(str(UserID))
-        #theCart['items'].remove(item)
         del theCart
 
     def addItem(self, UserID, ItemID):
