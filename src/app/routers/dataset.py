@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from app.schemas.resturantSchema import Resturant
 from app.schemas.menuSchema import Menu
 from app.schemas.itemSchema import Item
-from app.services.dataset.dataset import getItemList
 from app.repositories.resturant_repo import ResturantStorage
 from app.repositories.menu_repo import MenuStorage
 from app.repositories.item_repo import ItemStorage
@@ -27,7 +26,7 @@ def post_resturant(resturant: Resturant):
 
 @router.get("/getResturant/{restaurant_id}", response_model=Resturant)
 def get_resturant(restaurant_id: int):
-    return res.find_resturant(resturant_id)
+    return res.find_resturant(restaurant_id)
 
 @router.put("/setResturant/{restaurant_id}")
 def setResturant(restaurant_id: int, resturant: Resturant):
