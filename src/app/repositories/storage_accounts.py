@@ -5,7 +5,7 @@ from app.schemas.authenticationSchema import AccountInfo
 
 class AccountsStorage(Storage[AccountInfo]):
     def __init__(self, path: Path | None = None) -> None:
-        path = path or Path(__file__).parent / "accounts.json"
+        path = path or Path(__file__).parent.parent / "data/accounts.json"
         super().__init__(path)
 
     def add_new_account(self, account: AccountInfo) -> AccountInfo:
@@ -35,3 +35,10 @@ class AccountsStorage(Storage[AccountInfo]):
             return None
             
         return AccountInfo(**data).role
+
+    def get_account_email(self, username: str) -> str | None:
+        data = self.read(username)
+        if data is None:
+            return None
+            
+        return AccountInfo(**data).email
