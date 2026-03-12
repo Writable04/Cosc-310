@@ -4,10 +4,12 @@ from app.services.authentication.registration import Registration
 from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
+from app.services.notifications.notifications import Notification
 
 storage = AccountsStorage()
 authentication = Authentication(storage)
 registration = Registration(storage, authentication)
+notifications_server = Notification()
 
 admin_routes=['test/auth']
 
