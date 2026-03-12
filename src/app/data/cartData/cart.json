@@ -16,5 +16,11 @@
     "restaurant": "",
     "items": [],
     "subtotal": 0.0
+  },
+  "12345": {
+    "user_id": 12345,
+    "restaurant": "",
+    "items": [],
+    "subtotal": 0.0
   }
 }

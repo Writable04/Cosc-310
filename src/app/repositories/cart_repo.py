@@ -24,15 +24,18 @@ class CartStorage(Storage[Cart]):
             emptyCart = Cart(user_id=UserID, restaurant="", items=[], subtotal=0.00)
             self.write(str(UserID), emptyCart.model_dump(mode="json"))
 
+    def removeCart(self, UserID):
+        theCart = self.read(str(UserID))
+        #theCart['items'].remove(item)
+        del theCart
+
     def addItem(self, UserID, ItemID):
         # check if the item is already in the cart --if yes> increase quantity by one
         theCart = self.read(str(UserID))
         theItem = ItemStorage().find_item(ItemID)
 
         if not theItem:
-            return None
-            # SEND NOTIFICATION THAT THE ITEM DNE
-            exit
+            return False
 
         found = False
         for item in theCart['items']:
@@ -40,7 +43,7 @@ class CartStorage(Storage[Cart]):
                 item["quantity"] += 1
                 found = True
                 #theCart.updateCartRestaurant(theCart, theItem, None)  
-                break
+
                 
         if (not found):
             newItem = CartItem(name=theItem.name, itemID=ItemID, quantity = 1, price = theItem.price)
@@ -48,7 +51,7 @@ class CartStorage(Storage[Cart]):
 
         theCart['subtotal'] = round((theCart['subtotal'] + float(theItem.price)), 2)
         self.write(str(UserID), theCart)
-
+        return True
 
     def removeItem(self, UserID, ItemID): # -> item
         # check if there is more than 1 object in the cart. if theres only one, remove the item entirely (delete the entry)
@@ -56,9 +59,7 @@ class CartStorage(Storage[Cart]):
         theItem = ItemStorage().find_item(ItemID)
 
         if not theItem:
-            return None
-            # SEND NOTIFICATION THAT THE ITEM DNE
-            exit
+            return False
 
         found = False
         for item in theCart['items']:
@@ -72,9 +73,10 @@ class CartStorage(Storage[Cart]):
                 break
                 
         if (not found):
-            return None
+            return False
         
         self.write(str(UserID), theCart)
+        return True
 
     # THIS FUNCTION NEEDS TO BE UPDATED ONCE ITEM AND RESTAURANT ARE LINKED
     # def updateCartRestaurant(mrCart, mrItem, mrRestaurant) -> str:
