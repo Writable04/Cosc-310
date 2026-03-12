@@ -12,7 +12,7 @@ def storage(tmp_path: Path) -> AccountsStorage:
 
 @pytest.fixture
 def account() -> AccountInfo:
-    return AccountInfo(username="alice", password="secret123", role="user", token="test-token")
+    return AccountInfo(username="alice", password="secret123", role="user", email="idan@gmail.com", token="")
 
 
 def test_add_new_account_success(storage: AccountsStorage, account: AccountInfo) -> None:
@@ -35,8 +35,9 @@ def test_get_account_info(storage: AccountsStorage, account: AccountInfo) -> Non
     assert info.username == "alice"
     assert info.password == "secret123"
     assert info.role == "user"
+    assert info.email == "idan@gmail.com"
 
-def test_get_nonexistent_account_info(storage: AccountsStorage, account: AccountInfo) -> None:
+def test_get_nonexistent_account_info(storage: AccountsStorage) -> None:
     info = storage.get_account_info("alice")
     assert info is None
 

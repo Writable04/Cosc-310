@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 class AccountInfo(BaseModel):
+    email: str
     token: str
     password: str
     username: str
