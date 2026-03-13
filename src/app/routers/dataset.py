@@ -48,7 +48,7 @@ def post_menu(menu: Menu):
 
 @router.get("/getMenu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
-    return res.find_menu(menu_id)
+    return me.find_menu(menu_id)
 
 @router.put("/setMenu/{menu_id}")
 def setMenu(menu_id: int, menu: Menu):
