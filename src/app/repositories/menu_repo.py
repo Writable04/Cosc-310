@@ -9,7 +9,7 @@ class MenuStorage(CSVStorage):
         fields = list(Menu.model_fields.keys())
         super().__init__(path,fields)
     
-    def new_menu(self, menu: Menu):
+    def new_Menu(self, menu: Menu):
         self.write_row(menu.model_dump())
         return menu
 

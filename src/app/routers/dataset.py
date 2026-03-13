@@ -40,7 +40,7 @@ def post_menu(menu: Menu):
 
 @router.get("/menu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
-    return me.find_menu(menu_id)
+    return menu_storage.find_menu(menu_id)
 
 @router.put("/menu/{menu_id}")
 def setMenu(menu_id: int, menu: Menu):
