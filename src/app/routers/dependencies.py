@@ -7,6 +7,7 @@ from app.services.authentication.registration import Registration
 from fastapi import HTTPException, Request
 from app.services.notifications.notifications import Notification
 
+
 accounts_storage = AccountsStorage()
 authentication = Authentication(accounts_storage)
 registration = Registration(accounts_storage, authentication)
