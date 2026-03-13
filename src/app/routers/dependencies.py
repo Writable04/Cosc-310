@@ -8,6 +8,7 @@ from fastapi import HTTPException, Request
 from app.services.notifications.notifications import Notification
 from app.repositories.cart_repo import CartStorage
 
+
 accounts_storage = AccountsStorage()
 authentication = Authentication(accounts_storage)
 registration = Registration(accounts_storage, authentication)

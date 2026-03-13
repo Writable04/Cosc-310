@@ -3,4 +3,4 @@ from typing import List
 
 class Menu(BaseModel):
     menu_id: int
-    items: List[str] = []
+    items: List[int] = []
