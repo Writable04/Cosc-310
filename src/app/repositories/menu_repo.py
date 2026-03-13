@@ -1,4 +1,5 @@
 from pathlib import Path
+import ast
 from app.schemas.menuSchema import Menu
 from app.repositories.storage_base_csv import CSVStorage
 
@@ -15,6 +16,8 @@ class MenuStorage(CSVStorage):
     def find_menu(self, menu_id: int):
         row = self.find_by("menu_id", str(menu_id))
         if row:
+            if isinstance(row["items"], str):
+                row["items"] = ast.literal_eval(row["items"])
             return Menu(**row)
         return None
 
@@ -22,6 +25,8 @@ class MenuStorage(CSVStorage):
         self.update("menu_id", str(menu_id), updated_data)
         row = self.find_by("menu_id", str(menu_id))
         if row:
+            if isinstance(row["items"], str):
+                row["items"] = ast.literal_eval(row["items"])
             return Menu(**row)
         return None
 
@@ -30,4 +35,6 @@ class MenuStorage(CSVStorage):
         if not row:
             return None
         self.delete("menu_id", str(menu_id))
+        if isinstance(row["items"], str):
+            row["items"] = ast.literal_eval(row["items"])
         return Menu(**row)

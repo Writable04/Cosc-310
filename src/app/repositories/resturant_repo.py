@@ -1,5 +1,5 @@
 from pathlib import Path
-from app.schemas.resturantSchema import Resturant, deliveryResturant
+from app.schemas.resturantSchema import Resturant
 from app.repositories.storage_base_csv import CSVStorage
 
 class ResturantStorage(CSVStorage):
