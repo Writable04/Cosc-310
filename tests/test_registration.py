@@ -23,7 +23,7 @@ def registration(mock_storage: AccountsStorage, mock_auth: Authentication) -> Re
 
 
 def test_register_success(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="test-token")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="test-token", address="")
 
     # First call: user does not exist; second call: from login() after add_new_account
     mock_storage.get_account_info.side_effect = [None, account]
@@ -32,38 +32,38 @@ def test_register_success(registration: Registration, mock_storage: AccountsStor
     mock_auth.generate_new_token.return_value = "test-token"
     mock_auth.verify_password.return_value = True
 
-    assert registration.register(account.username, account.password, account.password, account.role, account.email) == "test-token"
+    assert registration.register(account.username, account.password, account.password, account.role, account.email, address=account.address) == "test-token"
 
 
 def test_register_account_already_exists(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="", address="")
 
     mock_storage.get_account_info.return_value = account
     mock_storage.add_new_account.return_value = account
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Username already exists"):
-        registration.register(account.username, account.password, account.password, account.role, account.email)
+        registration.register(account.username, account.password, account.password, account.role, account.email, address=account.address)
 
 
 def test_register_account_password_does_not_match(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="")
+    account = AccountInfo(username="idan", password="Idannnnnnn123", role="admin", email="idan@gmail.com", token="", address="")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Passwords do not match"):
-        registration.register(account.username, account.password, "Idannnnnnn1234", account.role, account.email)
+        registration.register(account.username, account.password, "Idannnnnnn1234", account.role, account.email, address=account.address)
 
 
 def test_register_account_password_is_not_valid(registration: Registration, mock_storage: AccountsStorage, mock_auth: Authentication) -> None:
-    account = AccountInfo(username="idan", password="Idannnn", role="admin", email="idan@gmail.com", token="")
+    account = AccountInfo(username="idan", password="Idannnn", role="admin", email="idan@gmail.com", token="", address="")
 
     mock_storage.get_account_info.return_value = None
     mock_auth.encrypt_password.return_value = account.password
 
     with pytest.raises(ValueError, match="Password is not valid"):
-        registration.register(account.username, account.password, account.password, account.role, account.email)
+        registration.register(account.username, account.password, account.password, account.role, account.email, address=account.address)
 
 
 def test_password_validation_too_short(registration: Registration) -> None:

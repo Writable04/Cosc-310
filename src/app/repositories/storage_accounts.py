@@ -42,3 +42,10 @@ class AccountsStorage(Storage[AccountInfo]):
             return None
             
         return AccountInfo(**data).email
+
+    def get_address(self, username: str) -> str | None:
+        data = self.read(username)
+        if data is None:
+            return None
+
+        return AccountInfo(**data).address
