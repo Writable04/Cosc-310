@@ -15,7 +15,7 @@ class MapStorage():
         'X-Goog-Api-Key': self.apiKey, 
         'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.legs.duration,routes.staticDuration'
         }
-
+ 
         # origin = "3333 University Way, Kelowna, BC"
         # destination = "5533 Airport Way, Kelowna, BC"
         self.payload = {
