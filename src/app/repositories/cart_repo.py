@@ -2,7 +2,7 @@ from pathlib import Path
 from app.schemas.cartSchema import Cart, CartItem
 from app.repositories.storage_base import Storage
 from app.repositories.item_repo import ItemStorage
-from app.repositories.menu_repo import MenuStorage
+from app.repositories.resturant_repo import ResturantStorage
 
 class CartStorage(Storage[Cart]):
     def __init__(self, path: Path | None = None) -> None:
@@ -40,15 +40,14 @@ class CartStorage(Storage[Cart]):
         for item in theCart['items']:
             if item.get("itemID") == ItemID:
                 item["quantity"] += 1
-                found = True
-                #theCart.updateCartRestaurant(theCart, theItem, None)  
+                found = True 
 
-                
         if (not found):
             newItem = CartItem(name=theItem.name, itemID=ItemID, quantity = 1, price = theItem.price)
             theCart['items'].append(newItem.model_dump(mode="json"))
-
-        theCart['subtotal'] = round((theCart['subtotal'] + float(theItem.price)), 2)
+            
+        CartStorage().updateCartRestaurant(theCart, theItem)  
+        theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
         self.write(str(UserID), theCart)
         return True
 
@@ -68,26 +67,47 @@ class CartStorage(Storage[Cart]):
                 else:
                     theCart['items'].remove(item)
                 found = True
-                theCart['subtotal'] = round((theCart['subtotal'] - float(theItem.price)), 2)
                 break
                 
         if (not found):
             return False
         
+        CartStorage().updateCartRestaurant(theCart, theItem)  
+        theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
         self.write(str(UserID), theCart)
         return True
 
-    # THIS FUNCTION NEEDS TO BE UPDATED ONCE ITEM AND RESTAURANT ARE LINKED
-    # def updateCartRestaurant(mrCart, mrItem, mrRestaurant) -> str:
-    #     if mrCart['restaurant'] == "" :
-    #         mrCart['restaurant'] = mrItem.menu_id
-    #     elif mrCart['restaurant'] == mrItem.menu_id:
-    #         return
-    #     elif mrCart['restaurant'] is not mrItem.menu_id:
-    #         # SEND NOTIFICATION THAT YOU SHOULD ONLY HAVE ONE RESTAURANT IN YOUR CART AT A TIME
-    #         return("BAD RESTAURANT")
+
+# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
+    def updateCartRestaurant(self, mrCart, mrItem):
+        theRestaurant = ResturantStorage().find_resturant(mrItem.menu_id)
+        resName = theRestaurant.name
+
+        # if the cart is empty, clear restaruant name
+        if mrCart["items"] == []:
+            mrCart['restaurant'] = ""
+            return
         
-    # def updateSubtotal():
-    #     # this function could update the subtotal by going thru all the entries
-    #     # might be more secure than current implementation
-    #     return None
+        # if restaurant hasnt been established 
+        elif mrCart['restaurant'] == "" :
+            mrCart['restaurant'] = resName
+            return
+
+        # if it already has the correct name
+        elif mrCart['restaurant'] == resName:
+            return
+        
+        #otherwise; if it has some other name
+        else:
+            # YOU SHOULD ONLY HAVE ONE RESTAURANT IN YOUR CART AT A TIME
+            return(-1)
+        
+    def updateSubtotal(self, mrCart) -> float:
+        mrSubtotal = 0.00
+        for item in mrCart['items']:
+            mrSubtotal += (item["quantity"])*(item["price"])
+        # IMPLEMENT COMBO DISCOUNTS!!!
+
+        return round(mrSubtotal, 2)
+    
+cart = CartStorage().addItem(123, 4)
