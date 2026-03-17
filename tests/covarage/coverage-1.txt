@@ -1,0 +1,15 @@
+Name                                              Stmts   Miss  Cover
+---------------------------------------------------------------------
+src/app/__init__.py                                   1      0   100%
+src/app/main.py                                      11      0   100%
+src/app/repositories/resturant_repo.py               25     16    36%
+src/app/repositories/storage_accounts.py             23      1    96%
+src/app/repositories/storage_base.py                 29      1    97%
+src/app/routers/authentication.py                    15      5    67%
+src/app/routers/resturants.py                        17      5    71%
+src/app/schemas/authenticationSchema.py               5      0   100%
+src/app/schemas/resturantSchema.py                   14      0   100%
+src/app/services/authentication/auth.py              15      1    93%
+src/app/services/authentication/registration.py      22      0   100%
+---------------------------------------------------------------------
+TOTAL                                               177     29    84%

@@ -14,9 +14,9 @@ app = FastAPI(
 def root() -> HealthResponse:
     return {"status": "ok", "version": __version__}
 
-app.include_router(dataset.router, prefix = "/dataset")
-app.include_router(authentication.router, prefix = "/authentication")
-app.include_router(notifications.router, prefix = "/notification")
+app.include_router(dataset.router, prefix="/dataset")
+app.include_router(authentication.router, prefix="/authentication")
+app.include_router(notifications.router, prefix="/notification")
 app.include_router(cart.router, prefix="/cart")
 app.include_router(payment.router, prefix="/payment")
 app.include_router(delivery.router, prefix="/delivery")
