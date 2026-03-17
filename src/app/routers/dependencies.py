@@ -17,12 +17,21 @@ menu_storage = MenuStorage()
 item_storage = ItemStorage()
 
 admin_routes=['test/auth', 'notification']
+resturant_manager_routes=[]
 
 def require_auth(username: str, token: str, request: Request) -> bool:
     authentication.authenticate(username, token)
+    route = request.scope.get("route").path
+    role = accounts_storage.get_account_role(username)
+    if (role == 'admin'):
+        return True
+
     for admin_route in admin_routes:
-        route = request.scope.get("route").path
-        if admin_route in route and accounts_storage.get_account_role(username) != 'admin':
+        if admin_route in route:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+    for resturant_manager_route in resturant_manager_routes:
+        if resturant_manager_route in route and role != 'manager':
             raise HTTPException(status_code=401, detail="Unauthorized")
         
     return True
