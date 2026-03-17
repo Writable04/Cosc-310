@@ -24,7 +24,7 @@ class Registration:
         return token
 
 
-    def register(self, username: str, password: str, validatated_password: str, role: str, email: str) -> str:
+    def register(self, username: str, password: str, validatated_password: str, role: str, email: str, address: str = "") -> str:
         if self.storage.get_account_info(username) is not None:
             raise ValueError("Username already exists")
 
@@ -39,7 +39,7 @@ class Registration:
             
         encrypted_password = self.authentication.encrypt_password(password)
         token = self.authentication.generate_new_token()
-        account = AccountInfo(username=username, password=encrypted_password, role=role, email=email, token=token)
+        account = AccountInfo(username=username, password=encrypted_password, role=role, email=email, token=token, address=address)
 
         self.storage.add_new_account(account)
 
@@ -54,5 +54,3 @@ class Registration:
 
     def _is_email_valid(self, email: str) -> bool:
         return validators.email(email) is True
-
-
