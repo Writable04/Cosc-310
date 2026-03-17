@@ -1,9 +1,8 @@
-restaurant_id,name,cusine,rating,restaurantAddress
+restaurant_id,name,cuisine,rating,restaurantAddress
 1,Bobs Burgers,American,4.5,test Address 1
 2,Tommys Tacos,Mexico,4.9,test Address 2
 3,Pauls Poutine,canadian,2.0,test Address 3
 4,Pops Pizza,Italian,5.0,test Address 4
 5,Carlys Curry,Indian,4.6,test Address 5
-6,Tulas Thai,Thai,2.3,test Address 67,
-
-
+6,Tulas Thai,Thai,2.3,test Address 6
+7,Jakes Burgers,American,4.3,test Address 7
