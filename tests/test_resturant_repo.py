@@ -3,7 +3,6 @@ from pathlib import Path
 from app.repositories.resturant_repo import ResturantStorage
 from app.schemas.resturantSchema import Resturant
 
-
 @pytest.fixture
 def storage(tmp_path):
     test_file = tmp_path / "restaurants.csv"
