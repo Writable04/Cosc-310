@@ -1,8 +1,7 @@
 restaurant_id,name,cuisine,rating,restaurantAddress
-1,Bobs Burgers,American,4.5,test Address 1
-2,Tommys Tacos,Mexico,4.9,test Address 2
-3,Pauls Poutine,canadian,2.0,test Address 3
-4,Pops Pizza,Italian,5.0,test Address 4
-5,Carlys Curry,Indian,4.6,test Address 5
-6,Tulas Thai,Thai,2.3,test Address 6
-7,Jakes Burgers,American,4.3,test Address 7
+1,Bobs Burgers,American,4.5,"2898 Hwy 97 N, Kelowna, BC"
+2,Tommys Tacos,Mexico,4.9,"120 Old Vernon Rd, Kelowna, BC"
+3,Pauls Poutine,canadian,2.0,"269 Bernard Ave, Kelowna, BC"
+4,Pops Pizza,Italian,5.0,"975 Academy Way, Kelowna, BC"
+5,Carlys Curry,Indian,4.6,"3272 University Way, Kelowna, BC"
+6,Tulas Thai,Thai,2.3,"1970 Kane Rd, Kelowna, BC"

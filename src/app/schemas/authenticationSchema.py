@@ -6,6 +6,7 @@ class AccountInfo(BaseModel):
     password: str
     username: str
     role: str
+    address: str = ""
 
 class AuthenticationResponse(BaseModel):
     token: str
