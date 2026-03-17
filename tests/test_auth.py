@@ -23,7 +23,7 @@ def test_encrypt_password(auth: Authentication) -> None:
 def test_verify_password_valid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin", email="idan@gmail.com", token=""
+        username="John", password=encrypted_password, role="admin", email="idan@gmail.com", token="", address=""
     )
 
     assert auth.verify_password("Password1", encrypted_password) is True
@@ -32,7 +32,7 @@ def test_verify_password_valid(auth: Authentication, mock_storage: MagicMock) ->
 def test_verify_password_invalid(auth: Authentication, mock_storage: MagicMock) -> None:
     encrypted_password = auth.encryption.hash("Password1")
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="John", password=encrypted_password, role="admin", email="idan@gmail.com", token=""
+        username="John", password=encrypted_password, role="admin", email="idan@gmail.com", token="", address=""
     )
 
     assert auth.verify_password("OtherPassword", encrypted_password) is False
@@ -45,13 +45,13 @@ def test_is_token_valid_when_account_missing(auth: Authentication, mock_storage:
 
 def test_is_token_valid_true(auth: Authentication, mock_storage: MagicMock) -> None:
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="Idannnnn", password="password123", role="admin", token="correct", email="idan@gmail.com"
+        username="Idannnnn", password="password123", role="admin", token="correct", email="idan@gmail.com", address=""
     )
     assert auth._is_token_valid("John", "wrong") is False
 
 
 def test_is_token_valid_false(auth: Authentication, mock_storage: MagicMock) -> None:
     mock_storage.get_account_info.return_value = AccountInfo(
-        username="Idan", password="password123", role="admin", token="correct", email="idan@gmail.com"
+        username="Idan", password="password123", role="admin", token="correct", email="idan@gmail.com", address=""
     )
     assert auth._is_token_valid("John", "correct") is True

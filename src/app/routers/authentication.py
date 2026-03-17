@@ -10,9 +10,9 @@ def test_authentication():
 
 
 @router.post("/register/{username}")
-def register(username: str, password: str, validatated_password: str, role: str, email: str) -> AuthenticationResponse:
+def register(username: str, password: str, validatated_password: str, role: str, email: str, address: str = "") -> AuthenticationResponse:
     try:
-        token = registration.register(username, password, validatated_password, role, email)
+        token = registration.register(username, password, validatated_password, role, email, address=address)
         return {"status": "success", "message": "User registered successfully", "token": token}
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
