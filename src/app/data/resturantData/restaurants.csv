@@ -4,4 +4,6 @@ restaurant_id,name,cusine,rating,restaurantAddress
 3,Pauls Poutine,canadian,2.0,test Address 3
 4,Pops Pizza,Italian,5.0,test Address 4
 5,Carlys Curry,Indian,4.6,test Address 5
-6,Tulas Thai,Thai,2.3,test Address 6
+6,Tulas Thai,Thai,2.3,test Address 67,
+
+
