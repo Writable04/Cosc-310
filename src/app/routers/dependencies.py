@@ -6,6 +6,7 @@ from app.services.authentication.auth import Authentication
 from app.services.authentication.registration import Registration
 from fastapi import HTTPException, Request
 from app.services.notifications.notifications import Notification
+from app.repositories.cart_repo import CartStorage
 
 
 accounts_storage = AccountsStorage()
@@ -15,6 +16,7 @@ notifications_server = Notification()
 resturant_storage = ResturantStorage()
 menu_storage = MenuStorage()
 item_storage = ItemStorage()
+cart = CartStorage()
 
 admin_routes=['test/auth', 'notification']
 
