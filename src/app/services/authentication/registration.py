@@ -54,5 +54,3 @@ class Registration:
 
     def _is_email_valid(self, email: str) -> bool:
         return validators.email(email) is True
-
-
