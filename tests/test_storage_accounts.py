@@ -36,6 +36,7 @@ def test_get_account_info(storage: AccountsStorage, account: AccountInfo) -> Non
     assert info.password == "secret123"
     assert info.role == "user"
     assert info.email == "idan@gmail.com"
+    assert info.address == ""
 
 def test_get_nonexistent_account_info(storage: AccountsStorage) -> None:
     info = storage.get_account_info("alice")
@@ -44,3 +45,18 @@ def test_get_nonexistent_account_info(storage: AccountsStorage) -> None:
 def test_get_account_role(storage: AccountsStorage, account: AccountInfo) -> None:
     storage.add_new_account(account)
     assert storage.get_account_role("alice") == "user"
+
+
+def test_get_address(storage: AccountsStorage, account: AccountInfo) -> None:
+    storage.add_new_account(account)
+    assert storage.get_address("alice") == ""
+
+
+def test_get_address_username_not_found(storage: AccountsStorage) -> None:
+    assert storage.get_address("alice") is None
+
+
+def test_get_address_with_address(storage: AccountsStorage) -> None:
+    account_with_address = AccountInfo(username="Ethan", password="pass", role="user", email="ethan@fsfsd.com", token="", address="1267 Discovery Av. Kelowna, BC")
+    storage.add_new_account(account_with_address)
+    assert storage.get_address("Ethan") == "1267 Discovery Av. Kelowna, BC"
