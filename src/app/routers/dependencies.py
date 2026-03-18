@@ -18,8 +18,8 @@ menu_storage = MenuStorage()
 item_storage = ItemStorage()
 cart = CartStorage()
 
-admin_routes=['notification']
-resturant_manager_routes=['dataset']
+admin_routes=['/notification']
+resturant_manager_routes=['/dataset']
 
 def require_auth(username: str, token: str, request: Request) -> bool:
     authentication.authenticate(username, token)
