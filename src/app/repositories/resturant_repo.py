@@ -2,6 +2,10 @@ from pathlib import Path
 from app.schemas.resturantSchema import Resturant
 from app.repositories.storage_base_csv import CSVStorage
 
+from app.repositories.map_storage import MapStorage
+
+map_api = MapStorage()
+
 class ResturantStorage(CSVStorage):
     def __init__(self, path: Path | None = None):
         path = path or Path(__file__).parent.parent / "data/resturantData/restaurants.csv"
@@ -12,9 +16,14 @@ class ResturantStorage(CSVStorage):
         self.write_row(resturant.dict())
         return resturant
 
-    def find_resturant(self, restaurant_id: int):
+    def find_resturant(self, restaurant_id: int, user_address: str = None) -> Resturant:
         row = self.find_by("restaurant_id", str(restaurant_id))
         if row:
+            if user_address is not None:
+                dist, duration = self.get_restaurant_distances(restaurant_id, user_address)
+                row["durationNinutes"] = duration
+                row["distanceKM"] = dist
+
             return Resturant(**row)
         return None
 
@@ -31,3 +40,17 @@ class ResturantStorage(CSVStorage):
             return None
         self.delete("restaurant_id", str(restaurant_id))
         return Resturant(**row)
+
+    def get_restaurant_address(self, restaurant_id: int) -> str | None:
+        restaurant = self.find_resturant(restaurant_id)
+        if restaurant is not None:
+            return restaurant.restaurantAddress
+
+        return None
+
+    def get_restaurant_distances(self, restaurant_id: int, user_address: str) -> tuple[float, int]:
+        restaurant_address = self.get_restaurant_address(restaurant_id)
+        if restaurant_address is not None and restaurant_address != "":
+            dist = map_api.calculateDeliveryDistanceKM(user_address, restaurant_address)
+            duration = map_api.calculateDeliveryTimeMins(user_address, restaurant_address)
+            return dist, duration

@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from app.repositories.resturant_repo import ResturantStorage
+import app.repositories.resturant_repo as resturant_repo
 from app.schemas.resturantSchema import Resturant
 
 @pytest.fixture
@@ -14,8 +15,9 @@ def sample_restaurant():
     return Resturant.model_construct(
         restaurant_id=1,
         name="Bobs burgers",
-        raiting="4",
-        cuisine="Italian"
+        cusine="Italian",
+        rating="4",
+        restaurantAddress="123 Main St, Kelowna, BC"
     )
 
 def test_new_resturant(storage, sample_restaurant):
@@ -60,3 +62,22 @@ def test_remove_resturant(storage, sample_restaurant):
 
     result = storage.find_resturant(1)
     assert result is None
+
+
+def test_get_restaurant_address(storage, sample_restaurant):
+    storage.new_resturant(sample_restaurant)
+
+    address = storage.get_restaurant_address(1)
+
+    assert address == "123 Main St, Kelowna, BC"
+
+
+def test_get_restaurant_distances(storage, sample_restaurant, monkeypatch):
+    storage.new_resturant(sample_restaurant)
+
+    monkeypatch.setattr(resturant_repo.map_api, "calculateDeliveryDistanceKM", lambda *_: 12.34)
+    monkeypatch.setattr(resturant_repo.map_api, "calculateDeliveryTimeMins", lambda *_: 56)
+
+    dist, duration = storage.get_restaurant_distances(1, "456 Dilworth Dr, Kelowna, BC")
+    assert dist == 12.34
+    assert duration == 56
