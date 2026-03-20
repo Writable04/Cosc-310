@@ -56,6 +56,7 @@ class ResturantStorage(CSVStorage):
             data.durationNinutes = duration
             data.distanceKM = dist
             resturants_with_distances.append(data)
+        return resturants_with_distances
 
     def get_restaurant_address(self, restaurant_id: int) -> str | None:
         restaurant = self.find_resturant(restaurant_id)

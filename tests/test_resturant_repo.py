@@ -81,3 +81,39 @@ def test_get_restaurant_distances(storage, sample_restaurant, monkeypatch):
     dist, duration = storage.get_restaurant_distances(1, "456 Dilworth Dr, Kelowna, BC")
     assert dist == 12.34
     assert duration == 56
+
+
+def test_get_resturants_with_distances(storage, monkeypatch):
+    storage.new_resturant(
+        Resturant(
+            restaurant_id=1,
+            name="Burgers",
+            cuisine="American",
+            rating=4.5,
+            restaurantAddress="123 Main St, Kelowna, BC",
+        )
+    )
+    storage.new_resturant(
+        Resturant(
+            restaurant_id=2,
+            name="Tacos",
+            cuisine="Mexican",
+            rating=4.9,
+            restaurantAddress="456 Discovery Ave, Kelowna, BC",
+        )
+    )
+
+    monkeypatch.setattr(
+        storage,
+        "get_restaurant_distances",
+        lambda restaurant_id, _user_address: (5, 10),
+    )
+
+    results = storage.get_resturants_with_distances("2423 Dilworth Dr, Kelowna, BC")
+
+    assert len(results) == 2
+    assert all(isinstance(result, Resturant) for result in results)
+    assert results[0].distanceKM == 5
+    assert results[0].durationNinutes == 10
+    assert results[1].distanceKM == 5
+    assert results[1].durationNinutes == 10
