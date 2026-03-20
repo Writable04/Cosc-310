@@ -285,6 +285,7 @@ class CartStorage(Storage[Cart]):
     #maybe add suggested combos
 
 cart = CartStorage()
+cart.loadUserCart(123)
 cart.clearUserCart(123)
 cart.addItem(123, 1)
 cart.addCombo(123, 1)
