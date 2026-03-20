@@ -26,6 +26,7 @@ class ResturantStorage(CSVStorage):
 
             return Resturant(**row)
         return None
+
     def find_resturant_query(self, entry: str,query: str):
         row = self.find_by(query, str(entry))
         if row:
@@ -45,6 +46,16 @@ class ResturantStorage(CSVStorage):
             return None
         self.delete("restaurant_id", str(restaurant_id))
         return Resturant(**row)
+
+    def get_resturants_with_distances(self, user_address: str) -> list[Resturant]:
+        resturants = self.read_all()
+        resturants_with_distances = []
+        for resturant in resturants:
+            data = Resturant(**resturant)
+            dist, duration = self.get_restaurant_distances(data.restaurant_id, user_address)
+            data.durationNinutes = duration
+            data.distanceKM = dist
+            resturants_with_distances.append(data)
 
     def get_restaurant_address(self, restaurant_id: int) -> str | None:
         restaurant = self.find_resturant(restaurant_id)

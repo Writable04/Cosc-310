@@ -30,15 +30,7 @@ def get_resturants(username: str):
     if user_address is None or user_address == "":
         return [Resturant(**resturant) for resturant in resturants]
 
-    resturants_with_distances = []
-    for resturant in resturants:
-        data = Resturant(**resturant)
-        dist, duration = resturant_storage.get_restaurant_distances(data.restaurant_id, user_address)
-        data.durationNinutes = duration
-        data.distanceKM = dist
-        resturants_with_distances.append(data)
-
-    return resturants_with_distances
+    return resturant_storage.get_resturants_with_distances(user_address)
 
 @router.get("/restaurant/{restaurant_id}/{username}/{token}", response_model=Resturant, dependencies=[Depends(require_auth)])
 def get_resturant(restaurant_id: int, username: str):
