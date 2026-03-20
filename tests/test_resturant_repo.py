@@ -114,6 +114,6 @@ def test_get_resturants_with_distances(storage, monkeypatch):
     assert len(results) == 2
     assert all(isinstance(result, Resturant) for result in results)
     assert results[0].distanceKM == 5
-    assert results[0].durationNinutes == 10
+    assert results[0].durationMinutes == 10
     assert results[1].distanceKM == 5
-    assert results[1].durationNinutes == 10
+    assert results[1].durationMinutes == 10

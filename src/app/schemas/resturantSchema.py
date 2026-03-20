@@ -6,6 +6,6 @@ class Resturant(BaseModel):
     cuisine: str
     rating: float = 0
     restaurantAddress: str
-    durationNinutes: int = 0
+    durationMinutes: int = 0
     distanceKM: float = 0.0
     

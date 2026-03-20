@@ -21,7 +21,7 @@ class ResturantStorage(CSVStorage):
         if row:
             if user_address is not None:
                 dist, duration = self.get_restaurant_distances(restaurant_id, user_address)
-                row["durationNinutes"] = duration
+                row["durationMinutes"] = duration
                 row["distanceKM"] = dist
 
             return Resturant(**row)
@@ -53,7 +53,7 @@ class ResturantStorage(CSVStorage):
         for resturant in resturants:
             data = Resturant(**resturant)
             dist, duration = self.get_restaurant_distances(data.restaurant_id, user_address)
-            data.durationNinutes = duration
+            data.durationMinutes = duration
             data.distanceKM = dist
             resturants_with_distances.append(data)
         return resturants_with_distances

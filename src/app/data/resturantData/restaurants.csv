@@ -1,4 +1,4 @@
-restaurant_id,name,cuisine,rating,restaurantAddress,durationNinutes,distanceKM
+restaurant_id,name,cuisine,rating,restaurantAddress,durationMinutes,distanceKM
 1,Bobs Burgers,American,4.5,"2898 Hwy 97 N, Kelowna, BC",0,0.00
 2,Tommys Tacos,Mexico,4.9,"120 Old Vernon Rd, Kelowna, BC",0,0.00
 3,Pauls Poutine,canadian,2.0,"269 Bernard Ave, Kelowna, BC",0,0.00
