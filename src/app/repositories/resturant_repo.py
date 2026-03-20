@@ -26,6 +26,11 @@ class ResturantStorage(CSVStorage):
 
             return Resturant(**row)
         return None
+    def find_resturant_query(self, entry: str,query: str):
+        row = self.find_by(query, str(entry))
+        if row:
+            return Resturant(**row)
+        return None
 
     def update_resturant(self, restaurant_id: int, updated_data: dict):
         self.update("restaurant_id", str(restaurant_id), updated_data)
