@@ -11,7 +11,7 @@ menus = []
 items = []
 
 #resturants
-@router.post("/restaurant")
+@router.post("/restaurant/{username}/{token}", dependencies=[Depends(require_auth)])
 def post_resturant(restaurant: Resturant):
     try:
         resturants.append(restaurant.dict())
@@ -40,17 +40,13 @@ def get_resturants(username: str):
 
     return resturants_with_distances
 
-@router.get("/restaurant/{restaurant_id}", response_model=Resturant)
-def get_resturant_public(restaurant_id: int):
-    try:
-        return resturant_storage.find_resturant(restaurant_id)
-    except ValueError as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
 @router.get("/restaurant/{restaurant_id}/{username}/{token}", response_model=Resturant, dependencies=[Depends(require_auth)])
 def get_resturant(restaurant_id: int, username: str):
-    user_address = accounts_storage.get_address(username)
-    return resturant_storage.find_resturant(restaurant_id, user_address)
+    try:
+        user_address = accounts_storage.get_address(username)
+        return resturant_storage.find_resturant(restaurant_id, user_address)
+    except ValueError as error:
+        raise HTTPException(status_code=500, detail=str(error))
 
 @router.put("/restaurant/{restaurant_id}/{username}/{token}", dependencies=[Depends(require_auth)])
 def setResturant(restaurant_id: int, resturant: Resturant):
