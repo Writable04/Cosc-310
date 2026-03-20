@@ -1,5 +1,5 @@
 from pathlib import Path
-from app.schemas.resturantSchema import Resturant, deliveryResturant
+from app.schemas.resturantSchema import Resturant
 from app.repositories.storage_base_csv import CSVStorage
 
 class ResturantStorage(CSVStorage):
@@ -14,6 +14,11 @@ class ResturantStorage(CSVStorage):
 
     def find_resturant(self, restaurant_id: int):
         row = self.find_by("restaurant_id", str(restaurant_id))
+        if row:
+            return Resturant(**row)
+        return None
+    def find_resturant_query(self, entry: str,query: str):
+        row = self.find_by(query, str(entry))
         if row:
             return Resturant(**row)
         return None

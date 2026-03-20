@@ -1,21 +1,22 @@
-Burritos
-Chicken rice
-Dumplings
-Sushi
-Cookie
-Salad
-Burger
-PastrySmoothie
-Cup cake
-Shawarma
-Briyani rice
-Beef pie
-Pizza
-Chicken pie
-CoffeeBoba tea
-Whole cake
-Chicken wings
-Pasta
-Fried chicken
-Taccos
-Soup
+name,item_id,price,menu_id
+Burritos,1,25.68,1
+Chicken rice,2,39.61,2
+Dumplings,3,14.45,3
+Sushi,4,8.53,4
+Cookie,5,10.31,5
+Salad,6,18.08,6
+Burger,7,41.17,1
+PastrySmoothie,8,31.61,2
+Cup cake,9,34.62,3
+Shawarma,10,40.82,4
+Briyani rice,11,24.82,5
+Beef pie,12,42.35,6
+Pizza,13,40.09,1
+Chicken pie,14,21.11,2
+CoffeeBoba tea,15,13.76,3
+Whole cake,16,49.88,4
+Chicken wings,17,21.94,5
+Pasta,18,37.25,6
+Fried chicken,19,12.3,1
+Taccos,20,42.21,2
+Soup,21,5.45,3

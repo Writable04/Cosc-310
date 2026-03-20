@@ -1,17 +1,9 @@
 from pydantic import BaseModel
 
 class Resturant(BaseModel):
-    restaurant_id: int
+    restaurant_id: int = 0
     name: str
-    cusine: str
+    cuisine: str
     rating: float = 0
-    deliveryDistance: str = "0"
+    restaurantAddress: str
     
-
-class deliveryResturant(BaseModel):
-    restaurant_id: int
-    food_item: str
-    delivery_time: str 
-    delivery_distance: str
-    customer_rating: str
-

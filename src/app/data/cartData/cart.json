@@ -1,9 +1,16 @@
 {
   "123": {
     "user_id": 123,
-    "restaurant": "",
-    "items": [],
-    "subtotal": 0.0
+    "restaurant": "Pops Pizza",
+    "items": [
+      {
+        "name": "Sushi",
+        "itemID": 4,
+        "quantity": 9,
+        "price": 8.53
+      }
+    ],
+    "subtotal": 76.77
   },
   "246": {
     "user_id": 246,
@@ -19,12 +26,6 @@
   },
   "12345": {
     "user_id": 12345,
-    "restaurant": "",
-    "items": [],
-    "subtotal": 0.0
-  },
-  "1": {
-    "user_id": 1,
     "restaurant": "",
     "items": [],
     "subtotal": 0.0

@@ -10,7 +10,6 @@ app = FastAPI(
     version=__version__,
 )
 
-
 @app.get("/")
 def root() -> HealthResponse:
     return {"status": "ok", "version": __version__}
