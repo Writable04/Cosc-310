@@ -102,30 +102,20 @@ class CartStorage(Storage[Cart]):
     
 
     def addCombo(self, UserID, combo_id):
+        #adds combo to applied combos in cart and also adds combo items into items
+        
         theCart = self.read(str(UserID))
         if theCart is None:
             return False
 
-        # ensure applied_combos exists
         if "appliedCombos" not in theCart:
             theCart["appliedCombos"] = []
 
-        # get restaurant name from cart
-        restaurant_name = theCart.get("restaurant")
-        if not restaurant_name:
-            return False
-
-        # find restaurant
-        restaurant = ResturantStorage().find_resturant_query(restaurant_name, "name")
-        if not restaurant:
-            return False
-
-        # get menu
-        menu = MenuStorage().find_menu(restaurant.restaurant_id)
+        # get menu // Combo IDs are extentions of menu ex: MenuID 1 ComboID 1.0 , 1.1
+        menu = MenuStorage().find_menu(int(combo_id))
         if not menu:
             return False
 
-        # find combo in menu
         target_combo = None
         for combo in menu.menuCombos:
             if combo.combo_id == combo_id:
@@ -155,8 +145,9 @@ class CartStorage(Storage[Cart]):
             }
             theCart["appliedCombos"].append(new_combo)
 
+        # update totals
         theCart['subtotal'] = self.updateSubtotal(theCart)
-
+        
         discount = self.getTotalDiscount(theCart)
         theCart['totalDiscount'] = discount
 
@@ -178,7 +169,7 @@ class CartStorage(Storage[Cart]):
 
         for combo in combos:
             if combo.get("combo_id") == combo_id:
-                combo_items = combo.get("comboItems", [])  # SAVE FIRST
+                combo_items = combo.get("comboItems", [])
 
                 if combo.get("count", 0) > 1:
                     combo["count"] -= 1
@@ -200,7 +191,7 @@ class CartStorage(Storage[Cart]):
                         theCart["items"].remove(item)
                     break
 
-        # update restaurant if cart is empty
+        #makes sure that when single item gets removed combo gets adjusted (maybe move to seperate update function)
         if not theCart["items"]:
             theCart["restaurant"] = ""
 
@@ -217,7 +208,7 @@ class CartStorage(Storage[Cart]):
 
         theCart["appliedCombos"] = valid_combos
 
-        # update totals
+        #update totals
         theCart['subtotal'] = self.updateSubtotal(theCart)
         discount = self.getTotalDiscount(theCart)
         theCart['totalDiscount'] = discount
