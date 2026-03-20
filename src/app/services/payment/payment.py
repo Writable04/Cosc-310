@@ -80,9 +80,10 @@ class PaymentService:
         if request.amount <= 0:
             return PaymentResponse(
                 status=PaymentStatus.FAILED,
+                message="Insufficient balance, must be greater than 0",
                 amount=request.amount,
                 retry_allowed=True,
-            )
+    )
 
         if request.amount > MAX_ORDER_AMOUNT:
             return PaymentResponse(
