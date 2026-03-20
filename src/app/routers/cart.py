@@ -26,3 +26,11 @@ def add_item(UserID: int, ItemID: int):
 @router.delete("/cartItem")
 def remove_item(UserID: int, ItemID: int):
     return cs.removeItem(UserID, ItemID)
+
+@router.get("/Subtotal")
+def getSubtotal(user_id:str):
+    return cs.readSubtotal(user_id)
+
+@router.get("/ComboDiscount")
+def getDiscount():
+    return getComboDiscount()

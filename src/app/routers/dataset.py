@@ -48,13 +48,9 @@ def removeRestaurant(restaurant_id: int):
 #menus
 @router.post("/menu")
 def post_menu(menu: Menu):
-    try:
-        menus.append(menu.dict())
-        menu_storage.new_menu(menu)
-        return menus
-    except ValueError as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
+        c = menu_storage.new_menu(menu)
+        return c
+    
 @router.get("/menu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
     try:
