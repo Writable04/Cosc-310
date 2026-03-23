@@ -16,7 +16,7 @@ notifications_server = Notification()
 resturant_storage = ResturantStorage()
 menu_storage = MenuStorage()
 item_storage = ItemStorage()
-cart = CartStorage()
+cart_storage = CartStorage()
 
 admin_routes=['/notification']
 resturant_manager_routes=['/dataset']

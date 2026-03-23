@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+
 from app.schemas.resturantSchema import Resturant
 from app.repositories.storage_base_csv import CSVStorage
 
@@ -47,16 +49,16 @@ class ResturantStorage(CSVStorage):
         self.delete("restaurant_id", str(restaurant_id))
         return Resturant(**row)
 
-    def get_resturants_with_distances(self, user_address: str) -> list[Resturant]:
-        resturants = self.read_all()
-        resturants_with_distances = []
-        for resturant in resturants:
-            data = Resturant(**resturant)
-            dist, duration = self.get_restaurant_distances(data.restaurant_id, user_address)
-            data.durationMinutes = duration
-            data.distanceKM = dist
-            resturants_with_distances.append(data)
-        return resturants_with_distances
+    def get_resturants_with_distances(self, user_address: str) -> list[dict[str, Any]]:
+        rows_out: list[dict[str, Any]] = []
+        for row in self.read_all():
+            row = dict(row)
+            rid = int(row["restaurant_id"])
+            dist, duration = self.get_restaurant_distances(rid, user_address)
+            row["durationMinutes"] = duration
+            row["distanceKM"] = dist
+            rows_out.append(row)
+        return rows_out
 
     def get_restaurant_address(self, restaurant_id: int) -> str | None:
         restaurant = self.find_resturant(restaurant_id)

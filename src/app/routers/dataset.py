@@ -11,6 +11,19 @@ menus = []
 items = []
 
 #resturants
+@router.get("/restaurants/{username}/{token}", response_model=list[Resturant], dependencies=[Depends(require_auth)])
+def get_resturants(username: str):
+    resturants = resturant_storage.read_all()
+    user_address = accounts_storage.get_address(username)
+
+    if user_address is None or user_address == "":
+        return [Resturant(**resturant) for resturant in resturants]
+
+    return [
+        Resturant(**row)
+        for row in resturant_storage.get_resturants_with_distances(user_address)
+    ]
+
 @router.post("/restaurant/{username}/{token}", dependencies=[Depends(require_auth)])
 def post_resturant(restaurant: Resturant):
     try:
@@ -22,16 +35,6 @@ def post_resturant(restaurant: Resturant):
     except ValueError as error:
         raise HTTPException(status_code=500, detail=str(error))
 
-@router.get("/restaurants/{username}/{token}", response_model=list[Resturant], dependencies=[Depends(require_auth)])
-def get_resturants(username: str):
-    resturants = resturant_storage.read_all()
-    user_address = accounts_storage.get_address(username)
-
-    if user_address is None or user_address == "":
-        return [Resturant(**resturant) for resturant in resturants]
-
-    return resturant_storage.get_resturants_with_distances(user_address)
-
 @router.get("/restaurant/{restaurant_id}/{username}/{token}", response_model=Resturant, dependencies=[Depends(require_auth)])
 def get_resturant(restaurant_id: int, username: str):
     try:
@@ -41,7 +44,7 @@ def get_resturant(restaurant_id: int, username: str):
         raise HTTPException(status_code=500, detail=str(error))
 
 @router.put("/restaurant/{restaurant_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def setResturant(restaurant_id: int, resturant: Resturant):
+def set_resturant(restaurant_id: int, resturant: Resturant):
     try:
         resturant_storage.update_resturant(restaurant_id, resturant.dict())
         return resturant.dict()
@@ -49,7 +52,7 @@ def setResturant(restaurant_id: int, resturant: Resturant):
         raise HTTPException(status_code=500, detail=str(error))
 
 @router.delete("/restaurant/{restaurant_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def removeRestaurant(restaurant_id: int):
+def remove_restaurant(restaurant_id: int):
     try:
         resturant_storage.remove_resturant(restaurant_id)
         return resturants
@@ -74,7 +77,7 @@ def get_menu(menu_id: int):
         raise HTTPException(status_code=500, detail=str(error))
 
 @router.put("/menu/{menu_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def setMenu(menu_id: int, menu: Menu):
+def set_menu(menu_id: int, menu: Menu):
     try:
         menu_storage.update_menu(menu_id, menu.dict())
         return menu.dict()
@@ -83,7 +86,7 @@ def setMenu(menu_id: int, menu: Menu):
 
 
 @router.delete("/menu/{menu_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def removeMenu(menu_id: int):
+def remove_menu(menu_id: int):
     try:
         menu_storage.remove_menu(menu_id)
         return menus
@@ -110,7 +113,7 @@ def get_item(item_id: int):
     
 
 @router.put("/item/{item_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def setItem(item_id: int, item: Item):
+def set_item(item_id: int, item: Item):
     try:
         item_storage.update_item(item_id, item.dict())
         return item.dict()
@@ -118,7 +121,7 @@ def setItem(item_id: int, item: Item):
         raise HTTPException(status_code=500, detail=str(error))
 
 @router.delete("/item/{item_id}/{username}/{token}", dependencies=[Depends(require_auth)])
-def removeItem(item_id: int):
+def remove_item(item_id: int):
     try: 
         item_storage.remove_item(item_id)
         return items

@@ -9,59 +9,59 @@ class CartStorage(Storage[Cart]):
         path = path or Path(__file__).parent.parent/"data"/"cartData"/"cart.json"
         super().__init__(path)
 
-    def loadUserCart(self, UserID) -> Cart | None:
-        data = self.read(str(UserID))
+    def loadUserCart(self, username: str) -> Cart | None:
+        data = self.read(username)
         if data is None:
-            emptyCart = Cart(user_id=UserID, restaurant="", items=[], subtotal=0.00)
-            self.write(UserID, emptyCart.model_dump(mode="json"))
+            emptyCart = Cart(user_id=username, restaurant="", items=[], subtotal=0.00)
+            self.write(username, emptyCart.model_dump(mode="json"))
             return Cart.model_validate(emptyCart)
         else:
             return Cart.model_validate(data)
 
-    def clearUserCart(self, UserID) -> Cart | None:
-        data = self.read(str(UserID))
+    def clearUserCart(self, username: str) -> Cart | None:
+        data = self.read(username)
         if data is not None:
-            emptyCart = Cart(user_id=UserID, restaurant="", items=[], subtotal=0.00)
-            self.write(str(UserID), emptyCart.model_dump(mode="json"))
+            emptyCart = Cart(user_id=username, restaurant="", items=[], subtotal=0.00)
+            self.write(username, emptyCart.model_dump(mode="json"))
 
-    def removeCart(self, UserID):
-        theCart = self.read(str(UserID))
+    def removeCart(self, username: str):
+        theCart = self.read(username)
         del theCart
 
-    def addItem(self, UserID, ItemID):
+    def addItem(self, username: str, itemID: int):
         # check if the item is already in the cart --if yes> increase quantity by one
-        theCart = self.read(str(UserID))
-        theItem = ItemStorage().find_item(ItemID)
+        theCart = self.read(username)
+        theItem = ItemStorage().find_item(itemID)
 
         if not theItem:
             return False
 
         found = False
         for item in theCart['items']:
-            if item.get("itemID") == ItemID:
+            if item.get("itemID") == itemID:
                 item["quantity"] += 1
                 found = True 
 
         if (not found):
-            newItem = CartItem(name=theItem.name, itemID=ItemID, quantity = 1, price = theItem.price)
+            newItem = CartItem(name=theItem.name, itemID=itemID, quantity = 1, price = theItem.price)
             theCart['items'].append(newItem.model_dump(mode="json"))
             
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
-        self.write(str(UserID), theCart)
+        self.write(username, theCart)
         return True
 
-    def removeItem(self, UserID, ItemID): # -> item
+    def removeItem(self, username: str, itemID: int): # -> item
         # check if there is more than 1 object in the cart. if theres only one, remove the item entirely (delete the entry)
-        theCart = self.read(str(UserID))
-        theItem = ItemStorage().find_item(ItemID)
+        theCart = self.read(username)
+        theItem = ItemStorage().find_item(itemID)
 
         if not theItem:
             return False
 
         found = False
         for item in theCart['items']:
-            if item.get("itemID") == ItemID:
+            if item.get("itemID") == itemID:
                 if(item.get("quantity") > 1):
                     item["quantity"] -= 1
                 else:
@@ -74,7 +74,7 @@ class CartStorage(Storage[Cart]):
         
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
-        self.write(str(UserID), theCart)
+        self.write(username, theCart)
         return True
 
 
@@ -109,5 +109,3 @@ class CartStorage(Storage[Cart]):
         # IMPLEMENT COMBO DISCOUNTS!!!
 
         return round(mrSubtotal, 2)
-    
-cart = CartStorage().addItem(123, 4)
