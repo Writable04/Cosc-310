@@ -23,17 +23,17 @@ def filter_resturants(storage, **filters):
             
             matched_names = {m[0] for m in matches}
 
-            results = [row for row in results if ( search in row.get("name", "").lower() or row.get("name", "").lower() in matched_names)]
+            results = [row for row in results if (search in row["name"].lower() or row["name"].lower() in matched_names)]
 
         elif key == "cuisine":
             cuisine = str(value).lower()
-            results = [row for row in results if cuisine in row.get("cuisine","").lower()]
+            results = [row for row in results if cuisine in row["cuisine"].lower()]
     
         elif key == "distance":
-            results = [row for row in results if row.get("distance","") is not None and row.get("distance") <= value]
+            results = [row for row in results if row["distanceKM"] is not None and row["distanceKM"] <= value]
 
         elif key == "rating":
-            results = [row for row in results if row.get("rating","") is not None and float(row.get("rating")) >= value]
+            results = [row for row in results if row["rating"] is not None and float(row["rating"]) >= value]
 
     return [Resturant(**row) for row in results]
 

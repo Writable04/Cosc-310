@@ -1,1 +1,10 @@
-{}
+{
+  "bob": {
+    "email": "bob@gmail.com",
+    "token": "bf5939de-fb28-40ff-af1c-cc0b5869bbf6",
+    "password": "$2b$12$k9XO0p0PuzxtWqvGngfWnO.iS4H6ABRUGF1YCrMWd9ZV5VI/22OAG",
+    "username": "bob",
+    "role": "admin",
+    "address": "1001 Fuller Ave, Kelowna, BC V1Y 6X6"
+  }
+}

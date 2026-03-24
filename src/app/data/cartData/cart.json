@@ -6,11 +6,11 @@
       {
         "name": "Sushi",
         "itemID": 4,
-        "quantity": 9,
+        "quantity": 10,
         "price": 8.53
       }
     ],
-    "subtotal": 76.77
+    "subtotal": 85.3
   },
   "246": {
     "user_id": 246,
