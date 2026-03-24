@@ -1,7 +1,27 @@
-restaurant_id,name,cuisine,rating,restaurantAddress
-1,Bobs Burgers,American,4.5,"2898 Hwy 97 N, Kelowna, BC"
-2,Tommys Tacos,Mexico,4.9,"120 Old Vernon Rd, Kelowna, BC"
-3,Pauls Poutine,canadian,2.0,"269 Bernard Ave, Kelowna, BC"
-4,Pops Pizza,Italian,5.0,"975 Academy Way, Kelowna, BC"
-5,Carlys Curry,Indian,4.6,"3272 University Way, Kelowna, BC"
-6,Tulas Thai,Thai,2.3,"1970 Kane Rd, Kelowna, BC"
+restaurant_id,name,cuisine,rating,restaurantAddress,durationMinutes,distanceKM
+1,Bobs Burgers,American,4.5,"2898 Hwy 97 N, Kelowna, BC",0,0.00
+2,Tommys Tacos,Mexico,4.9,"120 Old Vernon Rd, Kelowna, BC",0,0.00
+3,Pauls Poutine,canadian,2.0,"269 Bernard Ave, Kelowna, BC",0,0.00
+4,Pops Pizza,Italian,5.0,"975 Academy Way, Kelowna, BC",0,0.00
+5,Carlys Curry,Indian,4.6,"3272 University Way, Kelowna, BC",0,0.00
+6,Tulas Thai,Thai,2.3,"1970 Kane Rd, Kelowna, BC",0,0.00
+7,Sunset Sushi,Japanese,4.7,"555 Bernard Ave, Kelowna, BC",0,0.00
+8,Okanagan Grill,Canadian,4.3,"2100 Pandosy St, Kelowna, BC",0,0.00
+9,Lakeside Lunch Co,American,4.1,"1350 Water St, Kelowna, BC",0,0.00
+10,Dragon Wok,Chinese,3.9,"1876 Cooper Rd, Kelowna, BC",0,0.00
+11,Spice Route,Indian,4.8,"565 Lawrence Ave, Kelowna, BC",0,0.00
+12,Bella Roma,Italian,4.6,"3030 Pandosy St, Kelowna, BC",0,0.00
+13,Taco Fiesta,Mexican,4.2,"1925 Enterprise Way, Kelowna, BC",0,0.00
+14,The Breakfast Club,Breakfast,4.5,"271 Bernard Ave, Kelowna, BC",0,0.00
+15,Kelowna Kebabs,Middle Eastern,4.4,"1685 Richter St, Kelowna, BC",0,0.00
+16,Green Bowl,Healthy,4.0,"1488 Ellis St, Kelowna, BC",0,0.00
+17,The Noodle Box,Asian,4.3,"2339 Highway 97 N, Kelowna, BC",0,0.00
+18,Smokehouse BBQ,BBQ,4.7,"2121 Springfield Rd, Kelowna, BC",0,0.00
+19,Ocean Blue Seafood,Seafood,4.5,"1128 Sunset Dr, Kelowna, BC",0,0.00
+20,Vegan Valley,Vegan,4.6,"1630 Pandosy St, Kelowna, BC",0,0.00
+21,Burger Haven,American,3.8,"1956 Kane Rd, Kelowna, BC",0,0.00
+22,Golden Curry,Indian,4.2,"270 Harvey Ave, Kelowna, BC",0,0.00
+23,Pizza Palace,Italian,4.1,"3155 Lakeshore Rd, Kelowna, BC",0,0.00
+24,Sushi Zen,Japanese,4.9,"1890 Cooper Rd, Kelowna, BC",0,0.00
+25,Thai Orchid,Thai,4.4,"1950 Harvey Ave, Kelowna, BC",0,0.00
+26,Wrap It Up,Mediterranean,4.0,"1651 Ellis St, Kelowna, BC",0,0.00
