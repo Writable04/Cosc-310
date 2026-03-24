@@ -59,8 +59,8 @@ class MapStorage():
         data = directions_result.json()
 
         if directions_result.status_code == 200 and 'routes' in data:
-            distanceKM = data['routes'][0]['distanceMeters']
-            return distanceKM
+            distance_m = data['routes'][0]['distanceMeters']
+            return distance_m / 1000.0
         else:
             #print(directions_result.json()['error']['message'])
             return(-1.0)
