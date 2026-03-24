@@ -14,7 +14,7 @@ class AppliedCombos(BaseModel):
     quantity: int 
 
 class Cart(BaseModel):
-    user_id: int
+    user_id: str
     restaurant: str
     items: list[CartItem] = []
     subtotal: float = 0.0

@@ -4,10 +4,6 @@ from app.schemas.authenticationSchema import AuthenticationResponse
 
 router = APIRouter()
 
-@router.get("/test/auth/{username}/{token}", dependencies=[Depends(require_auth)])
-def test_authentication():
-    return {"status": "ok" }
-
 
 @router.post("/register/{username}")
 def register(username: str, password: str, validatated_password: str, role: str, email: str, address: str = "") -> AuthenticationResponse:

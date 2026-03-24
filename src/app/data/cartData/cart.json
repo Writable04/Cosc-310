@@ -1,6 +1,6 @@
 {
   "123": {
-    "user_id": 123,
+    "user_id": "123",
     "restaurant": "Bobs Burgers",
     "items": [
       {

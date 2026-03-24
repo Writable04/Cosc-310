@@ -1,9 +1,12 @@
 from app.schemas.resturantSchema import Resturant
 from rapidfuzz import fuzz, process
 
-def filter_resturants(storage, **filters):
-    rows = storage.read_all()
-    results = rows
+def filter_resturants(storage, user_address: str | None = None, **filters):
+    results = []
+    if user_address is not None and user_address != "":
+        results = storage.get_resturants_with_distances(user_address)
+    else:
+        results = [dict(row) for row in storage.read_all()]
 
     for key, value in filters.items():
         if value in (None,"",0,0,[]):
