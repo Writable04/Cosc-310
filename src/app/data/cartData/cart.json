@@ -1,33 +1,18 @@
 {
   "123": {
-    "user_id": 123,
-    "restaurant": "Pops Pizza",
+    "user_id": "123",
+    "restaurant": "Bobs Burgers",
     "items": [
       {
-        "name": "Sushi",
-        "itemID": 4,
-        "quantity": 14,
-        "price": 8.53
+        "name": "Burritos",
+        "itemID": 1,
+        "quantity": 1,
+        "price": 25.68
       }
     ],
-    "subtotal": 119.42
-  },
-  "246": {
-    "user_id": 246,
-    "restaurant": "",
-    "items": [],
-    "subtotal": 0.0
-  },
-  "1234": {
-    "user_id": 1234,
-    "restaurant": "",
-    "items": [],
-    "subtotal": 0.0
-  },
-  "12345": {
-    "user_id": 12345,
-    "restaurant": "",
-    "items": [],
-    "subtotal": 0.0
+    "subtotal": 25.68,
+    "appliedCombos": [],
+    "totalDiscount": 0,
+    "checkout_total": 25.68
   }
 }

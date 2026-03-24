@@ -62,14 +62,10 @@ def remove_restaurant(restaurant_id: int):
 #menus
 @router.post("/menu/{username}/{token}", dependencies=[Depends(require_auth)])
 def post_menu(menu: Menu):
-    try:
-        menus.append(menu.dict())
-        menu_storage.new_menu(menu)
-        return menus
-    except ValueError as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-@router.get("/menu/{menu_id}/{username}/{token}", response_model=Menu, dependencies=[Depends(require_auth)])
+        c = menu_storage.new_menu(menu)
+        return c
+    
+@router.get("/menu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
     try:
         return menu_storage.find_menu(menu_id)
