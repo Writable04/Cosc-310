@@ -20,7 +20,7 @@ class CartStorage(Storage[Cart]):
                 subtotal=0.00,
                 appliedCombos=[],
                 totalDiscount=0.00,
-                final_total=0.00
+                checkout_total=0.00
             )
             self.write(UserID, emptyCart.model_dump(mode="json"))
             return emptyCart
@@ -37,7 +37,7 @@ class CartStorage(Storage[Cart]):
                 subtotal=0.00,
                 appliedCombos=[],
                 totalDiscount=0.00,
-                final_total=0.00
+                checkout_total=0.00
             )
             self.write(str(UserID), emptyCart.model_dump(mode="json"))
 
@@ -94,14 +94,8 @@ class CartStorage(Storage[Cart]):
         self.write(str(UserID), theCart)
         return True
     
-    def readSubtotal(self, UserID) -> float:
-        theCart = self.read(str(UserID))
-        if theCart is None:
-            return 0.0
-        return theCart.get("subtotal", 0.0)
     
-
-    def addCombo(self, UserID, combo_id):
+    def addCombo(self, UserID, combo_id, menu_id):
         #adds combo to applied combos in cart and also adds combo items into items
         
         theCart = self.read(str(UserID))
@@ -111,8 +105,8 @@ class CartStorage(Storage[Cart]):
         if "appliedCombos" not in theCart:
             theCart["appliedCombos"] = []
 
-        # get menu // Combo IDs are extentions of menu ex: MenuID 1 ComboID 1.0 , 1.1
-        menu = MenuStorage().find_menu(int(combo_id))
+        # get menu 
+        menu = MenuStorage().find_menu(menu_id)
         if not menu:
             return False
 
@@ -132,7 +126,7 @@ class CartStorage(Storage[Cart]):
         found = False
         for combo in theCart["appliedCombos"]:
             if combo.get("combo_id") == combo_id:
-                combo["count"] += 1
+                combo["quantity"] += 1
                 found = True 
                 break
 
@@ -141,7 +135,7 @@ class CartStorage(Storage[Cart]):
                 "combo_id": target_combo.combo_id,
                 "comboItems": target_combo.comboItems,
                 "discountPrice": target_combo.discountPrice,
-                "count": 1
+                "quantity": 1
             }
             theCart["appliedCombos"].append(new_combo)
 
@@ -151,7 +145,7 @@ class CartStorage(Storage[Cart]):
         discount = self.getTotalDiscount(theCart)
         theCart['totalDiscount'] = discount
 
-        theCart['final_total'] = round(theCart['subtotal'] - discount, 2)
+        theCart['checkout_total'] = round(theCart['subtotal'] - discount, 2)
 
         self.write(str(UserID), theCart)
         return True
@@ -171,8 +165,8 @@ class CartStorage(Storage[Cart]):
             if combo.get("combo_id") == combo_id:
                 combo_items = combo.get("comboItems", [])
 
-                if combo.get("count", 0) > 1:
-                    combo["count"] -= 1
+                if combo.get("quantity", 0) > 1:
+                    combo["quantity"] -= 1
                 else:
                     combos.remove(combo)
 
@@ -182,14 +176,10 @@ class CartStorage(Storage[Cart]):
         if not found:
             return False
 
+
         for item_id in combo_items:
-            for item in theCart["items"]:
-                if item.get("itemID") == item_id:
-                    if item.get("quantity", 0) > 1:
-                        item["quantity"] -= 1
-                    else:
-                        theCart["items"].remove(item)
-                    break
+            self.removeItem(UserID, item_id)
+        theCart = self.read(str(UserID))
 
         #makes sure that when single item gets removed combo gets adjusted (maybe move to seperate update function)
         if not theCart["items"]:
@@ -203,7 +193,7 @@ class CartStorage(Storage[Cart]):
             max_possible = min(item_counts.get(i, 0) for i in combo["comboItems"])
             
             if max_possible > 0:
-                combo["count"] = min(combo["count"], max_possible)
+                combo["quantity"] = min(combo["quantity"], max_possible)
                 valid_combos.append(combo)
 
         theCart["appliedCombos"] = valid_combos
@@ -212,7 +202,7 @@ class CartStorage(Storage[Cart]):
         theCart['subtotal'] = self.updateSubtotal(theCart)
         discount = self.getTotalDiscount(theCart)
         theCart['totalDiscount'] = discount
-        theCart['final_total'] = round(theCart['subtotal'] - discount, 2)
+        theCart['checkout_total'] = round(theCart['subtotal'] - discount, 2)
 
         self.write(str(UserID), theCart)
         return True
@@ -222,9 +212,9 @@ class CartStorage(Storage[Cart]):
         total_discount = 0
 
         for combo in theCart.get("appliedCombos", []):
-            count = combo.get("count", 0)
+            quantity = combo.get("quantity", 0)
             discount_price = combo.get("discountPrice", 0.0)
-            total_discount += discount_price * count
+            total_discount += discount_price * quantity
 
         return total_discount
 
@@ -272,12 +262,12 @@ class CartStorage(Storage[Cart]):
         subtotal = theCart.get("subtotal", 0.0)
         discount = self.getTotalDiscount(theCart)
 
-        final_total = subtotal - discount
+        checkout_total = subtotal - discount
 
-        theCart["final_total"] = round(final_total, 2)
+        theCart["checkout_total"] = round(checkout_total, 2)
         self.write(str(UserID), theCart)
         
-        return final_total
+        return checkout_total
         
     #check discount
     #add combos / issue with needing the resturant name
@@ -288,7 +278,7 @@ cart = CartStorage()
 cart.loadUserCart(123)
 cart.clearUserCart(123)
 cart.addItem(123, 1)
-cart.addCombo(123, 1)
+cart.addCombo(123, 1, 1)
 print(cart.read("123"))
 cart.removeCombo(123,1)
 print(cart.read("123"))

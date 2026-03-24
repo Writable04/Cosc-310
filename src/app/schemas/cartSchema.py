@@ -8,10 +8,10 @@ class CartItem(BaseModel):
     price: float
 
 class AppliedCombos(BaseModel): 
-    combo_id: float
+    combo_id: int
     comboItems: list[int]
     discountPrice: float 
-    count: int 
+    quantity: int 
 
 class Cart(BaseModel):
     user_id: int
@@ -20,5 +20,5 @@ class Cart(BaseModel):
     subtotal: float = 0.0
     appliedCombos: list[AppliedCombos] = []
     totalDiscount: float = 0.0
-    final_total: float = 0.0
+    checkout_total: float = 0.0
     
