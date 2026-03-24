@@ -271,13 +271,3 @@ class CartStorage(Storage[Cart]):
         
         return checkout_total
         
-
-
-cart = CartStorage()
-cart.loadUserCart("123")
-cart.clearUserCart("123")
-cart.addItem("123", 1)
-cart.addCombo("123", 1, 1)
-print(cart.read("123"))
-cart.removeCombo("123",1)
-print(cart.read("123"))
