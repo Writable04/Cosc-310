@@ -4,17 +4,6 @@ from app.schemas.paymentSchema import SavedPaymentMethod
 
 
 class PaymentMethodStorage(Storage[dict]):
-    """
-    Persists saved payment methods keyed by user_id.
-    Structure:
-      {
-        "<user_id>": {
-            "<method_id>": { ...SavedPaymentMethod fields... },
-            ...
-        }
-      }
-    """
-
     def __init__(self, path: Path | None = None) -> None:
         path = path or Path(__file__).parent.parent / "data" / "paymentMethods.json"
         super().__init__(path)
