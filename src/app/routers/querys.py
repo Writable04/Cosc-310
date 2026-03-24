@@ -1,14 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.resturantSchema import Resturant
-from app.schemas.menuSchema import Menu
-from app.schemas.itemSchema import Item
+from fastapi import APIRouter, Depends
 from app.routers.dependencies import accounts_storage, require_auth, resturant_storage
-from app.services.dataset.querys import filter_resturants 
+from app.services.dataset.querys import filter_resturants
 
 router = APIRouter()
 
-@router.get("/filterResturant/{username}/{token}" , dependencies=[Depends(require_auth)])
-def filterResturants(
+@router.get("/resturants/{username}/{token}" , dependencies=[Depends(require_auth)])
+def get_filtered_restaurants(
     username: str,
     name: str = None,
     cuisine: str = None,
