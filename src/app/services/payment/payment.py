@@ -149,6 +149,7 @@ class PaymentService:
             retry_allowed=False,
         )
 
+
     def _send_payment_notification(self, username: str, subtotal: float, tax: float, total: float, transaction_id: str) -> None:
         try:
             account = self.accounts_repo.get_account_info(username)

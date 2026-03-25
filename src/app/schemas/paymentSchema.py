@@ -5,7 +5,7 @@ from enum import Enum
 class PaymentMethod(BaseModel):
     card_holder_name: str
     card_number: str
-    expiry_month: int
+    expiry_month: int   
     expiry_year: int
     cvv: str
     card_type: Literal["credit", "debit"]
@@ -22,6 +22,7 @@ class SavedPaymentMethod(BaseModel):
 class PaymentRequest(BaseModel):
     user_id: int
     username: str
+    restaurant: str
     amount: float
     method_id: Optional[str] = None
     new_method: Optional[PaymentMethod] = None
