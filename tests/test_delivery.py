@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
-
 from app.main import app
 from app.schemas.deliverySchema import DeliveryStatus, DeliveryOrder, STATUS_PROGRESSION
 from app.services.delivery.delivery import DeliveryService
