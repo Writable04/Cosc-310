@@ -4,7 +4,7 @@ from enum import Enum
 
 class PaymentMethod(BaseModel):
     card_holder_name: str
-    card_number: str      
+    card_number: str
     expiry_month: int
     expiry_year: int
     cvv: str
@@ -21,6 +21,7 @@ class SavedPaymentMethod(BaseModel):
 
 class PaymentRequest(BaseModel):
     user_id: int
+    username: str
     amount: float
     method_id: Optional[str] = None
     new_method: Optional[PaymentMethod] = None
@@ -34,5 +35,7 @@ class PaymentResponse(BaseModel):
     status: PaymentStatus
     message: str
     transaction_id: Optional[str] = None
+    subtotal: float
+    tax: float
     amount: float
     retry_allowed: bool = False

@@ -6,5 +6,21 @@
     "username": "bob",
     "role": "admin",
     "address": "1001 Fuller Ave, Kelowna, BC V1Y 6X6"
+  },
+  "ley7a": {
+    "email": "leyl7aa@gmail.com",
+    "token": "0c532232-0f20-40f0-b6cd-e6ce4d7c297f",
+    "password": "$2b$12$M2x3dQ7HtFRV6ewJmSWcuecjFY26n4sv02sYD3R9lIxAoEU7MIv1u",
+    "username": "ley7a",
+    "role": "Customer",
+    "address": "975 Academy Way"
+  },
+  "leyla": {
+    "email": "leyl7aa@gmail.com",
+    "token": "5aa78c14-f6f9-43f8-b122-c28cd447b297",
+    "password": "$2b$12$vzUjA8HcUzyLz47p1M72tei//wwRwSncilTsJGAF9UrB/eUj87.Zy",
+    "username": "leyla",
+    "role": "admin",
+    "address": "975 Academy Way"
   }
 }
