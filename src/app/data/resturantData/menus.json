@@ -1,0 +1,32 @@
+{
+  "1": {
+    "menu_id": 1,
+    "items": [
+      1,
+      7,
+      13,
+      19
+    ],
+    "menuCombos": [
+      {
+        "combo_id": 1,
+        "comboItems": [
+          1,
+          13
+        ],
+        "discountPrice": 5.0,
+        "menu_id": 1
+      },
+      {
+        "combo_id": 1,
+        "comboItems": [
+          1,
+          19
+        ],
+        "discountPrice": 10.0,
+        "menu_id": 1
+      }
+    ]
+  }
+}
+

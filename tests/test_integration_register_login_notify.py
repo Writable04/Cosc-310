@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
-from app.routers.dependencies import storage
+from app.routers.dependencies import accounts_storage
 
 # Mock SMTP so no real email is sent
 smtp_mock = patch("smtplib.SMTP", MagicMock())
@@ -19,7 +19,7 @@ def client() -> TestClient:
 @pytest.fixture(autouse=True)
 def clean_accounts_storage_after_tests():
     existing_accounts = {}
-    path = storage.path
+    path = accounts_storage.path
     if path.exists():
         existing_accounts = json.loads(path.read_text())
 

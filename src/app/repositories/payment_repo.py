@@ -2,26 +2,10 @@ from pathlib import Path
 from app.repositories.storage_base import Storage
 from app.schemas.paymentSchema import SavedPaymentMethod
 
-
 class PaymentMethodStorage(Storage[dict]):
-    """
-    Persists saved payment methods keyed by user_id.
-    Structure:
-      {
-        "<user_id>": {
-            "<method_id>": { ...SavedPaymentMethod fields... },
-            ...
-        }
-      }
-    """
-
     def __init__(self, path: Path | None = None) -> None:
         path = path or Path(__file__).parent.parent / "data" / "paymentMethods.json"
         super().__init__(path)
-
-    # ------------------------------------------------------------------
-    # helpers
-    # ------------------------------------------------------------------
 
     def _user_key(self, user_id: int) -> str:
         return str(user_id)
@@ -32,10 +16,6 @@ class PaymentMethodStorage(Storage[dict]):
 
     def _save_user_methods(self, user_id: int, methods: dict) -> None:
         self.write(self._user_key(user_id), methods)
-
-    # ------------------------------------------------------------------
-    # public API
-    # ------------------------------------------------------------------
 
     def get_all_methods(self, user_id: int) -> list[SavedPaymentMethod]:
         methods = self._get_user_methods(user_id)
@@ -49,7 +29,6 @@ class PaymentMethodStorage(Storage[dict]):
     def save_method(self, user_id: int, method: SavedPaymentMethod) -> SavedPaymentMethod:
         methods = self._get_user_methods(user_id)
 
-        # If this is the first card, make it default automatically
         if not methods:
             method.is_default = True
 
