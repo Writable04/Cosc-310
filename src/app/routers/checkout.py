@@ -15,25 +15,15 @@ TAX_RATE            = 0.05
 
 def _calculate_delivery_fee(user_address: str, restaurant_name: str) -> float:
     try:
-        resturant_storage = ResturantStorage()
-        maps = MapStorage()
-
-        all_restaurants = resturant_storage.read_all()
-        restaurant_address = None
-        for row in all_restaurants:
-            if row.get("name", "").lower() == restaurant_name.lower():
-                restaurant_address = row.get("restaurantAddress") or row.get("address")
-                break
-
-        if not restaurant_address:
+        restaurant = ResturantStorage().find_resturant_query(restaurant_name, "name")
+        if restaurant is None:
             return MIN_DELIVERY_FEE
-
-        distance_km = maps.calculateDeliveryDistanceKM(user_address, restaurant_address)
+ 
+        distance_km = MapStorage().calculateDeliveryDistanceKM(user_address, restaurant.restaurantAddress)
         if distance_km < 0:
             return MIN_DELIVERY_FEE
-
-        fee = round(max(distance_km * DELIVERY_FEE_PER_KM, MIN_DELIVERY_FEE), 2)
-        return fee
+ 
+        return round(max(distance_km * DELIVERY_FEE_PER_KM, MIN_DELIVERY_FEE), 2)
     except Exception:
         return MIN_DELIVERY_FEE
 
