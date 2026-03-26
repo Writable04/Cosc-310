@@ -63,8 +63,7 @@ def test_order_flow_register_through_checkout_ready_cart(client: TestClient) -> 
     assert restaurant_response.status_code == 200
     restaurant_data = restaurant_response.json()
     assert restaurant_data["name"] == "Bobs Burgers"
-    menu_id = restaurant_data["menu_id"]
-    assert menu_id > 0
+    menu_id = restaurant_data["restaurant_id"]
 
     # get menu data for restaurant
     menu_response = client.get(f"/dataset/menu/{menu_id}")

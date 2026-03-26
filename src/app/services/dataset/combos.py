@@ -4,7 +4,7 @@ def getComboDiscount(resName,mrCart):
         resturant = resturant_storage.find_resturant_query(resName, "name")
         if not resturant:
             return 0
-        menu = menu_storage.find_menu(resturant.menu_id)
+        menu = menu_storage.find_menu(resturant.restaurant_id)
         if not menu:
             return 0
         
