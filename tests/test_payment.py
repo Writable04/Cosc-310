@@ -84,7 +84,7 @@ def test_successful_payment(svc, card):
 
 def test_success_clears_cart(svc, card):
     svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=49.99, new_method=card))
-    svc.cart_repo.clearUserCart.assert_called_once_with("1")
+    svc.cart_repo.clearUserCart.assert_called_once_with(1)
 
 def test_zero_amount_fails(svc, card):
     result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=0.0, new_method=card))

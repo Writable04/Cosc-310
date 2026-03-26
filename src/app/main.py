@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app import __version__
-from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys
+from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery
 from app.schemas.baseSchema import HealthResponse
 
 app = FastAPI(
@@ -19,4 +19,4 @@ app.include_router(notifications.router, prefix="/notification")
 app.include_router(cart.router, prefix="/cart")
 app.include_router(payment.router, prefix="/payment")
 app.include_router(checkout.router, prefix="/checkout")
-#app.include_router(delivery.router, prefix="/delivery")
+app.include_router(delivery.router, prefix="/delivery")
