@@ -71,7 +71,7 @@ class CartStorage(Storage[Cart]):
             
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
-        theCart['checkout_total'] = CartStorage().updateFinalTotal(username)
+        theCart['checkout_total'] = round(theCart['subtotal']- theCart['totalDiscount'],2)
         self.write(username, theCart)
         return True
 
@@ -98,7 +98,7 @@ class CartStorage(Storage[Cart]):
         
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
-        theCart['checkout_total'] = CartStorage().updateFinalTotal(username)
+        theCart['checkout_total'] = round(theCart['subtotal']- theCart['totalDiscount'],2)
         self.write(username, theCart)
         return True
     
@@ -222,6 +222,8 @@ class CartStorage(Storage[Cart]):
 
         return total_discount
 
+
+# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
     def updateCartRestaurant(self, mrCart, mrItem):
         theRestaurant = ResturantStorage().find_resturant(mrItem.menu_id)
         resName = theRestaurant.name
@@ -251,7 +253,7 @@ class CartStorage(Storage[Cart]):
             mrSubtotal += (item["quantity"])*(item["price"])
         return round(mrSubtotal, 2)
     
-    def updateFinalTotal(self, UserID):
+    def updateCheckoutTotal(self, UserID):
         theCart = self.read(UserID)
         if not theCart:
             return 0.0
