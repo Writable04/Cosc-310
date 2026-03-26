@@ -37,7 +37,6 @@ def svc() -> PaymentService:
     return service
 
 
-
 def test_valid_card_passes(card):
     assert _validate_payment_method(card) == (True, "OK")
 
@@ -79,32 +78,32 @@ def test_delete_nonexistent(payment_repo):
     assert payment_repo.delete_method(1, "bad-id") is False
 
 def test_successful_payment(svc, card):
-    result = svc.process_payment(PaymentRequest(user_id=1, amount=49.99, new_method=card))
+    result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=49.99, new_method=card))
     assert result.status == PaymentStatus.SUCCESS
     assert result.retry_allowed is False
 
 def test_success_clears_cart(svc, card):
-    svc.process_payment(PaymentRequest(user_id=1, amount=49.99, new_method=card))
-    svc.cart_repo.clearUserCart.assert_called_once_with(1)
+    svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=49.99, new_method=card))
+    svc.cart_repo.clearUserCart.assert_called_once_with("1")
 
 def test_zero_amount_fails(svc, card):
-    result = svc.process_payment(PaymentRequest(user_id=1, amount=0.0, new_method=card))
+    result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=0.0, new_method=card))
     assert result.status == PaymentStatus.FAILED
     assert result.retry_allowed is True
 
 def test_over_limit_no_retry(svc, card):
-    result = svc.process_payment(PaymentRequest(user_id=1, amount=999.99, new_method=card))
+    result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=999.99, new_method=card))
     assert result.status == PaymentStatus.FAILED
     assert result.retry_allowed is False
 
 def test_declined_card_retry(svc, card):
     card.card_number = "4111000000000000"
-    result = svc.process_payment(PaymentRequest(user_id=1, amount=49.99, new_method=card))
+    result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=49.99, new_method=card))
     assert result.status == PaymentStatus.FAILED
     assert result.retry_allowed is True
 
 def test_no_method_fails(svc):
     svc.payment_repo.get_default_method.return_value = None
-    result = svc.process_payment(PaymentRequest(user_id=1, amount=49.99))
+    result = svc.process_payment(PaymentRequest(user_id=1, username="testuser", restaurant="Bobs Burgers", amount=49.99))
     assert result.status == PaymentStatus.FAILED
     assert result.retry_allowed is True

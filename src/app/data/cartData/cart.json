@@ -1,18 +1,1 @@
-{
-  "123": {
-    "user_id": "123",
-    "restaurant": "Bobs Burgers",
-    "items": [
-      {
-        "name": "Burritos",
-        "itemID": 1,
-        "quantity": 1,
-        "price": 25.68
-      }
-    ],
-    "subtotal": 25.68,
-    "appliedCombos": [],
-    "totalDiscount": 0,
-    "checkout_total": 25.68
-  }
-}
+{}
