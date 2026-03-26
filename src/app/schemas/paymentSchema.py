@@ -21,8 +21,8 @@ class SavedPaymentMethod(BaseModel):
 
 class PaymentRequest(BaseModel):
     user_id: int
-    username: str
-    restaurant: str
+    username: Optional[str] = ""
+    restaurant: Optional[str] = ""
     amount: float
     method_id: Optional[str] = None
     new_method: Optional[PaymentMethod] = None
