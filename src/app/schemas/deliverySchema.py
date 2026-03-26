@@ -18,6 +18,7 @@ STATUS_PROGRESSION = [
     DeliveryStatus.DELIVERED,
 ]
 
+
 class DeliveryOrder(BaseModel):
     order_id: str
     user_id: int
@@ -29,6 +30,7 @@ class DeliveryOrder(BaseModel):
     eta_seconds: Optional[int] = None
     created_at: str = ""
     updated_at: str = ""
+    estimated_delivery: str = ""
 
 
 class DeliveryStatusUpdate(BaseModel):

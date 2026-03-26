@@ -13,33 +13,21 @@ def start_delivery(
     user_id: int,
     username: str,
     token: str,
-    restaurant_id: int,
     total: float,
 ):
     ds = DeliveryService()
     require_auth(username, token, request)
 
     from app.repositories.cart_repo import CartStorage
-    from app.repositories.resturant_repo import ResturantStorage
-
-    user_address = accounts_storage.get_address(username)
-    if not user_address:
-        raise HTTPException(status_code=400, detail="No address on account — needed for delivery.")
-
-    restaurant = ResturantStorage().find_resturant(restaurant_id)
-    if restaurant is None:
-        raise HTTPException(status_code=404, detail="Restaurant not found.")
 
     cart = CartStorage()
-    user_cart = cart.loadUserCart(user_id)
+    user_cart = cart.loadUserCart(str(user_id))
     items = [i.model_dump(mode="json") for i in user_cart.items] if user_cart else []
 
     order = ds.start_delivery(
         user_id=user_id,
         username=username,
-        restaurant=restaurant.restaurantName,
-        restaurant_address=restaurant.restaurantAddress,
-        user_address=user_address,
+        restaurant=user_cart.restaurant if user_cart else "",
         items=items,
         total=total,
     )
@@ -62,7 +50,7 @@ def get_past_orders(
 
     account = accounts_storage.get_account_info(username)
     if account is None:
-        raise HTTPException(status_code=404, detail="no user found.")
+        raise HTTPException(status_code=404, detail="User not found.")
 
     return ds.get_past_orders(user_id, restaurant, date)
 
@@ -80,13 +68,10 @@ def update_delivery_status(
 
     role = accounts_storage.get_account_role(username)
 
-    if role is None:
-        role = "admin"
-
     if role not in ("admin",):
         raise HTTPException(
             status_code=403,
-            detail="admin issue"
+            detail="Only admin can update delivery status."
         )
 
     order = ds.update_status(order_id, body.status)
@@ -102,5 +87,5 @@ def track_order(order_id: str, username: str, token: str, request: Request):
 
     order = ds.get_order(order_id)
     if order is None:
-        raise HTTPException(status_code=404, detail="order not found.")
+        raise HTTPException(status_code=404, detail="Order not found.")
     return order

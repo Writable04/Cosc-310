@@ -1,6 +1,6 @@
 import uuid
-import time
-from datetime import datetime, timezone
+import asyncio
+from datetime import datetime, timezone, timedelta
 
 from app.schemas.deliverySchema import (
     DeliveryOrder,
@@ -9,29 +9,28 @@ from app.schemas.deliverySchema import (
 )
 from app.repositories.delivery_repo import DeliveryStorage
 from app.repositories.storage_accounts import AccountsStorage
-from app.repositories.map_storage import MapStorage
 from app.services.notifications.notifications import Notification
+
+STEP_DELAY = 30
+TOTAL_DELIVERY_SECONDS = (len(STATUS_PROGRESSION) - 1) * STEP_DELAY
+
 
 class DeliveryService:
     def __init__(self) -> None:
         self.repo = DeliveryStorage()
         self.accounts_repo = AccountsStorage()
-        self.maps = MapStorage()
 
     def start_delivery(
         self,
         user_id: int,
         username: str,
         restaurant: str,
-        restaurant_address: str,
-        user_address: str,
         items: list[dict],
         total: float,
     ) -> DeliveryOrder:
-        duration_mins = self.maps.calculateDeliveryTimeMins(user_address, restaurant_address)
-        eta_seconds = duration_mins * 60 if duration_mins > 0 else 600
+        now = datetime.now(timezone.utc)
+        estimated = now + timedelta(seconds=TOTAL_DELIVERY_SECONDS)
 
-        now = datetime.now(timezone.utc).isoformat()
         order = DeliveryOrder(
             order_id=str(uuid.uuid4()),
             user_id=user_id,
@@ -40,23 +39,26 @@ class DeliveryService:
             items=items,
             total=total,
             status=DeliveryStatus.PENDING,
-            eta_seconds=eta_seconds,
-            created_at=now,
-            updated_at=now,
+            created_at=now.isoformat(),
+            updated_at=now.isoformat(),
+            estimated_delivery=estimated.isoformat(),
         )
         self.repo.save_order(order)
         self._notify(order, "Your order is pending.")
         return order
 
     def get_order(self, order_id: str) -> DeliveryOrder | None:
-        return self.repo.get_order(order_id)
+        order = self.repo.get_order(order_id)
+        if order is None:
+            return None
+        return self._with_eta(order)
 
     def update_status(self, order_id: str, new_status: DeliveryStatus) -> DeliveryOrder | None:
         order = self.repo.update_status(order_id, new_status)
         if order is None:
             return None
         self._notify(order, self._status_message(new_status))
-        return order
+        return self._with_eta(order)
 
     def get_past_orders(
         self,
@@ -64,18 +66,12 @@ class DeliveryService:
         restaurant: str | None = None,
         date: str | None = None,
     ) -> list[DeliveryOrder]:
-        return self.repo.get_user_orders(user_id, restaurant, date)
+        orders = self.repo.get_user_orders(user_id, restaurant, date)
+        return [self._with_eta(o) for o in orders]
 
-    def auto_progress(self, order_id: str) -> None:
-        order = self.repo.get_order(order_id)
-        if order is None:
-            return
-
-        steps = len(STATUS_PROGRESSION) - 1  
-        step_delay = 30
-
-        for status in STATUS_PROGRESSION[1:]: 
-            time.sleep(step_delay)
+    async def auto_progress(self, order_id: str) -> None:
+        for status in STATUS_PROGRESSION[1:]:
+            await asyncio.sleep(STEP_DELAY)
 
             current = self.repo.get_order(order_id)
             if current is None or current.status == DeliveryStatus.CANCELLED:
@@ -85,11 +81,25 @@ class DeliveryService:
             if updated:
                 self._notify(updated, self._status_message(status))
 
+    def _with_eta(self, order: DeliveryOrder) -> DeliveryOrder:
+        if order.status in (DeliveryStatus.DELIVERED, DeliveryStatus.CANCELLED):
+            order.eta_seconds = None
+            return order
+        try:
+            est = datetime.fromisoformat(order.estimated_delivery)
+            now = datetime.now(timezone.utc)
+            if est.tzinfo is None:
+                est = est.replace(tzinfo=timezone.utc)
+            order.eta_seconds = max(int((est - now).total_seconds()), 0)
+        except Exception:
+            order.eta_seconds = None
+        return order
+
     def _status_message(self, status: DeliveryStatus) -> str:
         messages = {
-            DeliveryStatus.PENDING:    "Your order is Pending.",
-            DeliveryStatus.IN_PROCESS: "Your order is getting prepared",
-            DeliveryStatus.IN_TRANSIT: "Your order is out for delivery",
+            DeliveryStatus.PENDING:    "Your order is pending.",
+            DeliveryStatus.IN_PROCESS: "Your order is being prepared.",
+            DeliveryStatus.IN_TRANSIT: "Your order is out for delivery.",
             DeliveryStatus.DELIVERED:  "Your order has been delivered.",
             DeliveryStatus.CANCELLED:  "Your order has been cancelled.",
         }
