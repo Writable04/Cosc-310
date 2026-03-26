@@ -10,7 +10,7 @@ class CartStorage(Storage[Cart]):
         path = path or Path(__file__).parent.parent/"data"/"cartData"/"cart.json"
         super().__init__(path)
 
-    def loadUserCart(self, username: str) -> Cart | None:
+    def loadUserCart(self, username: str) -> Cart:
         data = self.read(username)
         if data is None:
             emptyCart = Cart(
@@ -22,13 +22,12 @@ class CartStorage(Storage[Cart]):
                 totalDiscount=0.00,
                 checkout_total=0.00
             )
-            emptyCart = Cart(user_id=username, restaurant="", items=[], subtotal=0.00)
             self.write(username, emptyCart.model_dump(mode="json"))
             return Cart.model_validate(emptyCart)
         else:
             return Cart.model_validate(data)
 
-    def clearUserCart(self, username: str) -> Cart | None:
+    def clearUserCart(self, username: str) -> bool:
         data = self.read(username)
         if data is not None:
             emptyCart = Cart(
@@ -42,10 +41,14 @@ class CartStorage(Storage[Cart]):
             )
             emptyCart = Cart(user_id=username, restaurant="", items=[], subtotal=0.00)
             self.write(username, emptyCart.model_dump(mode="json"))
+            return True
+        
 
     def removeCart(self, username: str):
         theCart = self.read(username)
+        CartStorage().clearUserCart(username)
         del theCart
+        return True
 
     def addItem(self, username: str, itemID: int):
         # check if the item is already in the cart --if yes> increase quantity by one
@@ -67,6 +70,7 @@ class CartStorage(Storage[Cart]):
             
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
+        theCart['checkout_total'] = CartStorage().updateFinalTotal(username)
         self.write(username, theCart)
         return True
 
@@ -93,6 +97,7 @@ class CartStorage(Storage[Cart]):
         
         CartStorage().updateCartRestaurant(theCart, theItem)  
         theCart['subtotal'] = CartStorage().updateSubtotal(theCart)
+        theCart['checkout_total'] = CartStorage().updateFinalTotal(username)
         self.write(username, theCart)
         return True
     
@@ -216,7 +221,6 @@ class CartStorage(Storage[Cart]):
         return total_discount
 
 
-
 # COMPLEMENTARY FUNCTIONS (they are used within the above functions)
     def updateCartRestaurant(self, mrCart, mrItem):
         theRestaurant = ResturantStorage().find_resturant(mrItem.menu_id)
@@ -245,24 +249,20 @@ class CartStorage(Storage[Cart]):
         mrSubtotal = 0.00
         for item in mrCart['items']:
             mrSubtotal += (item["quantity"])*(item["price"])
-          
-        # IMPLEMENT COMBO DISCOUNTS!!!
-
         return round(mrSubtotal, 2)
     
-
     def updateFinalTotal(self, UserID):
-        theCart = self.read(str(UserID))
+        theCart = self.read(UserID)
         if not theCart:
             return 0.0
 
-        subtotal = theCart.get("subtotal", 0.0)
+        subtotal = theCart["subtotal"]
         discount = self.getTotalDiscount(theCart)
 
         checkout_total = subtotal - discount
 
         theCart["checkout_total"] = round(checkout_total, 2)
-        self.write(str(UserID), theCart)
+        self.write(UserID, theCart)
         
         return checkout_total
         
