@@ -1,39 +1,37 @@
 import uuid
-import random
-import asyncio
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import datetime, timezone
 
 from app.schemas.deliverySchema import (
     DeliveryOrder,
     DeliveryStatus,
-    DeliveryResponse,
     STATUS_PROGRESSION,
 )
 from app.repositories.delivery_repo import DeliveryStorage
 from app.repositories.storage_accounts import AccountsStorage
+from app.repositories.map_storage import MapStorage
 from app.services.notifications.notifications import Notification
-
-PROGRESSION_MIN = 10
-PROGRESSION_MAX = 15
-
-TOTAL_DELIVERY_SECONDS = (len(STATUS_PROGRESSION) - 1) * PROGRESSION_MAX
 
 class DeliveryService:
     def __init__(self) -> None:
-        self.delivery_repo = DeliveryStorage()
+        self.repo = DeliveryStorage()
         self.accounts_repo = AccountsStorage()
+        self.maps = MapStorage()
 
     def start_delivery(
         self,
         user_id: int,
         username: str,
         restaurant: str,
+        restaurant_address: str,
+        user_address: str,
         items: list[dict],
         total: float,
     ) -> DeliveryOrder:
-        now = datetime.now(timezone.utc)
-        estimated = now + timedelta(seconds=TOTAL_DELIVERY_SECONDS)
+        duration_mins = self.maps.calculateDeliveryTimeMins(user_address, restaurant_address)
+        eta_seconds = duration_mins * 60 if duration_mins > 0 else 600
 
+        now = datetime.now(timezone.utc).isoformat()
         order = DeliveryOrder(
             order_id=str(uuid.uuid4()),
             user_id=user_id,
@@ -42,106 +40,75 @@ class DeliveryService:
             items=items,
             total=total,
             status=DeliveryStatus.PENDING,
-            created_at=now.isoformat(),
-            updated_at=now.isoformat(),
-            estimated_delivery=estimated.isoformat(),
+            eta_seconds=eta_seconds,
+            created_at=now,
+            updated_at=now,
         )
-        self.delivery_repo.save_order(order)
-        self._notify(order, "Your order has been placed and is Pending.")
+        self.repo.save_order(order)
+        self._notify(order, "Your order is pending.")
         return order
 
-    def get_order(self, order_id: str) -> DeliveryResponse | None:
-        order = self.delivery_repo.get_order(order_id)
-        if order is None:
-            return None
-        return self._to_response(order)
+    def get_order(self, order_id: str) -> DeliveryOrder | None:
+        return self.repo.get_order(order_id)
 
-    def update_status(
-        self, order_id: str, new_status: DeliveryStatus
-    ) -> DeliveryResponse | None:
-        order = self.delivery_repo.update_status(order_id, new_status)
+    def update_status(self, order_id: str, new_status: DeliveryStatus) -> DeliveryOrder | None:
+        order = self.repo.update_status(order_id, new_status)
         if order is None:
             return None
-        self._notify(order, f"Your order status has been updated to: {new_status.value}")
-        return self._to_response(order)
+        self._notify(order, self._status_message(new_status))
+        return order
 
     def get_past_orders(
         self,
         user_id: int,
         restaurant: str | None = None,
         date: str | None = None,
-    ) -> list[DeliveryResponse]:
-        orders = self.delivery_repo.get_user_orders(user_id, restaurant, date)
-        return [self._to_response(o) for o in orders]
+    ) -> list[DeliveryOrder]:
+        return self.repo.get_user_orders(user_id, restaurant, date)
 
-    async def auto_progress(self, order_id: str) -> None:
-        for i in range(1, len(STATUS_PROGRESSION)):
-            delay = random.randint(PROGRESSION_MIN, PROGRESSION_MAX)
-            await asyncio.sleep(delay)
+    def auto_progress(self, order_id: str) -> None:
+        order = self.repo.get_order(order_id)
+        if order is None:
+            return
 
-            current = self.delivery_repo.get_order(order_id)
+        steps = len(STATUS_PROGRESSION) - 1  
+        step_delay = 30
+
+        for status in STATUS_PROGRESSION[1:]: 
+            time.sleep(step_delay)
+
+            current = self.repo.get_order(order_id)
             if current is None or current.status == DeliveryStatus.CANCELLED:
                 break
 
-            next_status = STATUS_PROGRESSION[i]
-            order = self.delivery_repo.update_status(order_id, next_status)
-            if order:
-                msg = self._status_message(next_status)
-                self._notify(order, msg)
-
-    def _to_response(self, order: DeliveryOrder) -> DeliveryResponse:
-        """Build a DeliveryResponse with a live ETA in seconds."""
-        eta = None
-        if order.status not in (DeliveryStatus.DELIVERED, DeliveryStatus.CANCELLED):
-            try:
-                est = datetime.fromisoformat(order.estimated_delivery)
-                now = datetime.now(timezone.utc)
-                # Make est timezone-aware if needed
-                if est.tzinfo is None:
-                    est = est.replace(tzinfo=timezone.utc)
-                delta = int((est - now).total_seconds())
-                eta = max(delta, 0)
-            except Exception:
-                eta = None
-
-        return DeliveryResponse(
-            order_id=order.order_id,
-            restaurant=order.restaurant,
-            items=order.items,
-            total=order.total,
-            status=order.status,
-            estimated_delivery=order.estimated_delivery,
-            created_at=order.created_at,
-            updated_at=order.updated_at,
-            eta_seconds=eta,
-        )
+            updated = self.repo.update_status(order_id, status)
+            if updated:
+                self._notify(updated, self._status_message(status))
 
     def _status_message(self, status: DeliveryStatus) -> str:
         messages = {
-            DeliveryStatus.PENDING:    "Your order has been placed and is Pending.",
-            DeliveryStatus.IN_PROCESS: "Your order is now being prepared!",
-            DeliveryStatus.IN_TRANSIT: "Your order is out for delivery and on its way!",
-            DeliveryStatus.DELIVERED:  "Your order has been delivered. Enjoy your meal!",
+            DeliveryStatus.PENDING:    "Your order is Pending.",
+            DeliveryStatus.IN_PROCESS: "Your order is getting prepared",
+            DeliveryStatus.IN_TRANSIT: "Your order is out for delivery",
+            DeliveryStatus.DELIVERED:  "Your order has been delivered.",
             DeliveryStatus.CANCELLED:  "Your order has been cancelled.",
         }
         return messages.get(status, f"Order status updated to {status.value}.")
 
     def _notify(self, order: DeliveryOrder, message: str) -> None:
-        """Send email notification; silently skip on failure."""
         try:
             account = self.accounts_repo.get_account_info(order.username)
             if account is None:
                 return
-            notifier = Notification()
             subject = f"Order Update – {order.status.value}"
             body = (
                 f"Hello {order.username},\n\n"
                 f"{message}\n\n"
-                f"Order ID : {order.order_id}\n"
+                f"Order ID  : {order.order_id}\n"
                 f"Restaurant: {order.restaurant}\n"
                 f"Total     : ${order.total:.2f}\n\n"
                 "— Food Delivery Team"
             )
-            notifier.send_notification(subject, body, account.email)
+            Notification().send_notification(subject, body, account.email)
         except Exception:
             pass
