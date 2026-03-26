@@ -1,8 +1,10 @@
-def getComboDiscount(self,resName,mrCart):
-        resturant = ResturantStorage().find_resturant_query(resName, "name")
+from app.routers.dependencies import resturant_storage, menu_storage
+
+def getComboDiscount(resName,mrCart):
+        resturant = resturant_storage.find_resturant_query(resName, "name")
         if not resturant:
             return 0
-        menu = MenuStorage().find_menu(resturant.restaurant_id)
+        menu = menu_storage.find_menu(resturant.restaurant_id)
         if not menu:
             return 0
         
