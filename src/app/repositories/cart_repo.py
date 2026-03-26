@@ -23,10 +23,9 @@ class CartStorage(Storage[Cart]):
                 checkout_total=0.00
             )
             self.write(username, emptyCart.model_dump(mode="json"))
-        #     return Cart.model_validate(emptyCart)
-        # else:
-        # i changed this part so the reference is consistent
-        return Cart.model_validate(data)
+            return Cart.model_validate(emptyCart)
+        else:
+            return Cart.model_validate(data)
 
     def clearUserCart(self, username: str) -> bool:
         data = self.read(username)
