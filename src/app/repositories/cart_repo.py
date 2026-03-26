@@ -222,6 +222,8 @@ class CartStorage(Storage[Cart]):
 
         return total_discount
 
+
+# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
     def updateCartRestaurant(self, mrCart, mrItem):
         theRestaurant = ResturantStorage().find_resturant(mrItem.menu_id)
         resName = theRestaurant.name
