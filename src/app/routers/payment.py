@@ -1,0 +1,37 @@
+from fastapi import APIRouter, HTTPException
+from app.schemas.paymentSchema import (
+    PaymentMethod,
+    PaymentRequest,
+    PaymentResponse,
+    SavedPaymentMethod,
+)
+from app.services.payment.payment import PaymentService
+
+router = APIRouter()
+ps = PaymentService()
+
+@router.get("/methods", response_model=list[SavedPaymentMethod])
+def list_payment_methods(user_id: int):
+    return ps.get_payment_methods(user_id)
+
+@router.post("/methods", response_model=SavedPaymentMethod, status_code=201)
+def add_payment_method(user_id: int, method: PaymentMethod):
+    try:
+        return ps.add_payment_method(user_id, method)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+@router.delete("/methods/{method_id}", status_code=204)
+def delete_payment_method(user_id: int, method_id: str):
+    if not ps.delete_payment_method(user_id, method_id):
+        raise HTTPException(status_code=404, detail="Payment method not found.")
+
+@router.patch("/methods/{method_id}/default", status_code=200)
+def set_default_payment_method(user_id: int, method_id: str):
+    if not ps.set_default_method(user_id, method_id):
+        raise HTTPException(status_code=404, detail="Payment method not found.")
+    return {"detail": "Default payment method updated."}
+
+@router.post("/process", response_model=PaymentResponse)
+def process_payment(request: PaymentRequest):
+    return ps.process_payment(request)

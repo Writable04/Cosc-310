@@ -1,0 +1,13 @@
+{
+  "1": {
+    "61bb4c4d-1f40-432e-adcc-eaf232fecefc": {
+      "method_id": "61bb4c4d-1f40-432e-adcc-eaf232fecefc",
+      "card_holder_name": "leyla h",
+      "last_four": "1111",
+      "expiry_month": 11,
+      "expiry_year": 2027,
+      "card_type": "credit",
+      "is_default": true
+    }
+  }
+}
