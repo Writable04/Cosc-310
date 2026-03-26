@@ -23,9 +23,10 @@ class CartStorage(Storage[Cart]):
                 checkout_total=0.00
             )
             self.write(username, emptyCart.model_dump(mode="json"))
-            return Cart.model_validate(emptyCart)
-        else:
-            return Cart.model_validate(data)
+        #     return Cart.model_validate(emptyCart)
+        # else:
+        # i changed this part so the reference is consistent
+        return Cart.model_validate(data)
 
     def clearUserCart(self, username: str) -> bool:
         data = self.read(username)
@@ -74,7 +75,7 @@ class CartStorage(Storage[Cart]):
         self.write(username, theCart)
         return True
 
-    def removeItem(self, username: str, itemID: int): # -> item
+    def removeItem(self, username: str, itemID: int):
         # check if there is more than 1 object in the cart. if theres only one, remove the item entirely (delete the entry)
         theCart = self.read(username)
         theItem = ItemStorage().find_item(itemID)
@@ -209,6 +210,7 @@ class CartStorage(Storage[Cart]):
         self.write(str(UserID), theCart)
         return True
     
+# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
 
     def getTotalDiscount(self, theCart):
         total_discount = 0
@@ -220,8 +222,6 @@ class CartStorage(Storage[Cart]):
 
         return total_discount
 
-
-# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
     def updateCartRestaurant(self, mrCart, mrItem):
         theRestaurant = ResturantStorage().find_resturant(mrItem.menu_id)
         resName = theRestaurant.name
@@ -229,21 +229,21 @@ class CartStorage(Storage[Cart]):
         # if the cart is empty, clear restaruant name
         if mrCart["items"] == []:
             mrCart['restaurant'] = ""
-            return
+            return True
         
         # if restaurant hasnt been established 
         elif mrCart['restaurant'] == "" :
             mrCart['restaurant'] = resName
-            return
+            return True
 
         # if it already has the correct name
         elif mrCart['restaurant'] == resName:
-            return
+            return True
         
         #otherwise; if it has some other name
         else:
             # YOU SHOULD ONLY HAVE ONE RESTAURANT IN YOUR CART AT A TIME
-            return(-1)
+            return(False)
         
     def updateSubtotal(self, mrCart) -> float:
         mrSubtotal = 0.00
