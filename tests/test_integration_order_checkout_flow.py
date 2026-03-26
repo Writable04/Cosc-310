@@ -115,7 +115,7 @@ def test_order_flow_register_through_checkout_ready_cart(client: TestClient) -> 
     cart = cart_response.json()
 
     assert cart["restaurant"] == "Bobs Burgers"
-    assert cart["appliedCombos"]
+    assert len(cart["appliedCombos"]) > 0
     assert cart["totalDiscount"] == pytest.approx(5.0)
     assert cart["subtotal"] == pytest.approx(185.01)
     assert cart["checkout_total"] == pytest.approx(
