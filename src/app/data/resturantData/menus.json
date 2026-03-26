@@ -27,6 +27,25 @@
         "menu_id": 1
       }
     ]
+  },
+  "2": {
+    "menu_id": 2,
+    "items": [
+      2,
+      8,
+      14,
+      20
+    ],
+    "menuCombos": [
+      {
+        "combo_id": 1,
+        "comboItems": [
+          14,
+          20
+        ],
+        "discountPrice": 6.5,
+        "menu_id": 2
+      }
+    ]
   }
 }
-
