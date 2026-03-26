@@ -230,21 +230,21 @@ class CartStorage(Storage[Cart]):
         # if the cart is empty, clear restaruant name
         if mrCart["items"] == []:
             mrCart['restaurant'] = ""
-            return True
+            return 1
         
         # if restaurant hasnt been established 
         elif mrCart['restaurant'] == "" :
             mrCart['restaurant'] = resName
-            return True
+            return 1
 
         # if it already has the correct name
         elif mrCart['restaurant'] == resName:
-            return True
+            return 1
         
         #otherwise; if it has some other name
         else:
             # YOU SHOULD ONLY HAVE ONE RESTAURANT IN YOUR CART AT A TIME
-            return(False)
+            return(-1)
         
     def updateSubtotal(self, mrCart) -> float:
         mrSubtotal = 0.00
