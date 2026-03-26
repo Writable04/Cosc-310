@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.routers.dependencies import cart_storage, require_auth
 from app.schemas.cartSchema import Cart
 from app.schemas.itemSchema import Item
@@ -26,3 +26,10 @@ def add_item(username: str, item: Item):
 @router.delete("/item/{username}/{token}", dependencies=[Depends(require_auth)])
 def remove_item(username: str, item: Item):
     return cart_storage.removeItem(username, item.item_id)
+
+
+@router.post("/combo/{username}/{token}", dependencies=[Depends(require_auth)], response_model=Cart)
+def add_combo(username: str, combo_id: int, menu_id: int) -> Cart:
+    if not cart_storage.addCombo(username, combo_id, menu_id):
+        raise HTTPException(status_code=400, detail="Combo could not be applied")
+    return cart_storage.loadUserCart(username)
