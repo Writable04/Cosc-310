@@ -90,13 +90,7 @@ def test_order_flow_register_through_checkout_ready_cart(client: TestClient) -> 
     # add items to cart
     for item in items_by_id.values():
         add_res = client.post(
-            f"/cart/item/{username}/{token}",
-            json={
-                "item_id": item["item_id"],
-                "name": item["name"],
-                "price": str(item["price"]),
-                "menu_id": item["menu_id"],
-            },
+            f"/cart/item/{username}/{item['item_id']}/{token}",
         )
         assert add_res.status_code == 200
         assert add_res.json() is True
@@ -104,8 +98,8 @@ def test_order_flow_register_through_checkout_ready_cart(client: TestClient) -> 
     # apply combo to cart
     combo_id = menu_data["menuCombos"][0]["combo_id"]
     combo_response = client.post(
-        f"/cart/combo/{username}/{token}",
-        params={"combo_id": combo_id, "menu_id": menu_id},
+        f"/cart/combo/{username}/{combo_id}/{token}",
+        params={"menu_id": menu_id},
     )
     assert combo_response.status_code == 200
 

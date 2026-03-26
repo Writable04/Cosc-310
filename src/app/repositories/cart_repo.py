@@ -74,7 +74,7 @@ class CartStorage(Storage[Cart]):
         self.write(username, theCart)
         return True
 
-    def removeItem(self, username: str, itemID: int): # -> item
+    def removeItem(self, username: str, itemID: int):
         # check if there is more than 1 object in the cart. if theres only one, remove the item entirely (delete the entry)
         theCart = self.read(username)
         theItem = ItemStorage().find_item(itemID)
@@ -209,6 +209,7 @@ class CartStorage(Storage[Cart]):
         self.write(str(UserID), theCart)
         return True
     
+# COMPLEMENTARY FUNCTIONS (they are used within the above functions)
 
     def getTotalDiscount(self, theCart):
         total_discount = 0
@@ -229,16 +230,16 @@ class CartStorage(Storage[Cart]):
         # if the cart is empty, clear restaruant name
         if mrCart["items"] == []:
             mrCart['restaurant'] = ""
-            return
+            return 1
         
         # if restaurant hasnt been established 
         elif mrCart['restaurant'] == "" :
             mrCart['restaurant'] = resName
-            return
+            return 1
 
         # if it already has the correct name
         elif mrCart['restaurant'] == resName:
-            return
+            return 1
         
         #otherwise; if it has some other name
         else:
