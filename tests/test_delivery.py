@@ -24,6 +24,7 @@ def _make_order(order_id="order-1", user_id=1, status=DeliveryStatus.PENDING,
         estimated_delivery=(now + timedelta(seconds=45)).isoformat(),
     )
 
+
 class TestDeliveryService:
 
     def test_start_delivery_creates_order(self):
@@ -100,11 +101,10 @@ class TestDeliveryService:
                 resp = svc.get_order("order-1")
         assert isinstance(resp.eta_seconds, int)
 
+
 class TestAutoProgression:
 
-    @pytest.mark.asyncio
     async def test_auto_progress_advances_through_all_statuses(self):
-        """Pending → In Process → In Transit → Delivered"""
         statuses_set = []
         order = _make_order()
 
@@ -127,9 +127,7 @@ class TestAutoProgression:
             DeliveryStatus.DELIVERED,
         ]
 
-    @pytest.mark.asyncio
     async def test_auto_progress_stops_when_cancelled(self):
-        """If order is cancelled mid-way, progression stops."""
         cancelled_order = _make_order(status=DeliveryStatus.CANCELLED)
 
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
@@ -142,74 +140,75 @@ class TestAutoProgression:
 
         MockRepo.return_value.update_status.assert_not_called()
 
+
 class TestDeliveryRouter:
-    def _mock_auth(self, mock_accounts, role="user"):
-        from app.schemas.authenticationSchema import AccountInfo
-        mock_accounts.return_value.get_account_info.return_value = AccountInfo(
-            email="test@example.com", token="valid-token",
-            password="hashed", username="testuser", role=role,
-        )
-        mock_accounts.return_value.get_account_role.return_value = role
 
     def test_track_order_returns_200(self):
         order = _make_order()
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct)
-                    MockRepo.return_value.get_order.return_value = order
-                    resp = client.get(
-                        "/delivery/order-1?username=testuser&token=valid-token"
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockAcct.get_account_role.return_value = "user"
+                        MockRepo.return_value.get_order.return_value = order
+                        resp = client.get(
+                            "/delivery/order-1?username=testuser&token=valid-token"
+                        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "Pending"
 
     def test_track_order_not_found_returns_404(self):
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct)
-                    MockRepo.return_value.get_order.return_value = None
-                    resp = client.get(
-                        "/delivery/nonexistent?username=testuser&token=valid-token"
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockRepo.return_value.get_order.return_value = None
+                        resp = client.get(
+                            "/delivery/nonexistent?username=testuser&token=valid-token"
+                        )
         assert resp.status_code == 404
 
     def test_admin_can_update_status(self):
         updated = _make_order(status=DeliveryStatus.CANCELLED)
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct, role="admin")
-                    MockRepo.return_value.update_status.return_value = updated
-                    resp = client.patch(
-                        "/delivery/order-1/status?username=testuser&token=valid-token",
-                        json={"status": "Cancelled"},
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockAcct.get_account_role.return_value = "admin"
+                        MockRepo.return_value.update_status.return_value = updated
+                        resp = client.patch(
+                            "/delivery/order-1/status?username=testuser&token=valid-token",
+                            json={"status": "Cancelled"},
+                        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "Cancelled"
 
     def test_regular_user_cannot_update_status(self):
         with patch("app.services.delivery.delivery.DeliveryStorage"):
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct, role="user")
-                    resp = client.patch(
-                        "/delivery/order-1/status?username=testuser&token=valid-token",
-                        json={"status": "Cancelled"},
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_role.return_value = "user"
+                        resp = client.patch(
+                            "/delivery/order-1/status?username=testuser&token=valid-token",
+                            json={"status": "Cancelled"},
+                        )
         assert resp.status_code == 403
 
     def test_past_orders_returns_list(self):
         orders = [_make_order("o1"), _make_order("o2")]
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct)
-                    MockRepo.return_value.get_user_orders.return_value = orders
-                    resp = client.get(
-                        "/delivery/past-orders/1?username=testuser&token=valid-token"
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockRepo.return_value.get_user_orders.return_value = orders
+                        resp = client.get(
+                            "/delivery/past-orders/1?username=testuser&token=valid-token"
+                        )
         assert resp.status_code == 200
         assert len(resp.json()) == 2
 
@@ -217,12 +216,13 @@ class TestDeliveryRouter:
         orders = [_make_order("o1", restaurant="Burger Barn")]
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct)
-                    MockRepo.return_value.get_user_orders.return_value = orders
-                    resp = client.get(
-                        "/delivery/past-orders/1?username=testuser&token=valid-token&restaurant=Burger+Barn"
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockRepo.return_value.get_user_orders.return_value = orders
+                        resp = client.get(
+                            "/delivery/past-orders/1?username=testuser&token=valid-token&restaurant=Burger+Barn"
+                        )
         assert resp.status_code == 200
         assert resp.json()[0]["restaurant"] == "Burger Barn"
 
@@ -230,10 +230,11 @@ class TestDeliveryRouter:
         orders = [_make_order("o1")]
         with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo:
             with patch("app.services.delivery.delivery.AccountsStorage"):
-                with patch("app.routers.delivery.accounts_storage") as MockAcct:
-                    self._mock_auth(MockAcct)
-                    MockRepo.return_value.get_user_orders.return_value = orders
-                    resp = client.get(
-                        "/delivery/past-orders/1?username=testuser&token=valid-token&date=2026-03-15"
-                    )
+                with patch("app.routers.delivery.require_auth", return_value=True):
+                    with patch("app.routers.delivery.accounts_storage") as MockAcct:
+                        MockAcct.get_account_info.return_value = MagicMock(email="test@example.com")
+                        MockRepo.return_value.get_user_orders.return_value = orders
+                        resp = client.get(
+                            "/delivery/past-orders/1?username=testuser&token=valid-token&date=2026-03-15"
+                        )
         assert resp.status_code == 200
