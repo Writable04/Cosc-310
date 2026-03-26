@@ -136,7 +136,7 @@ class PaymentService:
             )
 
         transaction_id = str(uuid.uuid4())
-        self.cart_repo.clearUserCart(str(request.user_id))
+        self.cart_repo.clearUserCart(request.user_id)
         self._send_payment_notification(request.username, subtotal, tax, total, transaction_id)
 
         return PaymentResponse(
