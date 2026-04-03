@@ -65,6 +65,8 @@ class MapStorage():
             #print(directions_result.json()['error']['message'])
             return(-1.0)
 
-# test = MapStorage().calculateDeliveryDistanceKM(origin="120 Old Vernon Rd, Kelowna, BC", 
-#                                               destination="3333 University Way, Kelowna, BC")
-# print(test/1000) #convert from m to KM
+
+if __name__ == "__main__":
+    test = MapStorage().calculateDeliveryTimeMins(origin="1137 Alumni Ave, Kelowna, BC",
+                                                  destination="2271 Harvey Ave, Kelowna, BC")
+    print(test)
