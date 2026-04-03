@@ -22,7 +22,7 @@ def login(username: str, password: str) -> AuthenticationResponse:
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
 
-@router.get("/account/{username}")
+@router.get("/account/{username}/{token}" , dependencies=[Depends(require_auth)])
 def get_account_info(username: str) -> dict:
     account = accounts_storage.get_account_info(username)
     if account is None:
