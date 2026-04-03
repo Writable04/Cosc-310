@@ -13,7 +13,7 @@
     "password": "$2b$12$M2x3dQ7HtFRV6ewJmSWcuecjFY26n4sv02sYD3R9lIxAoEU7MIv1u",
     "username": "ley7a",
     "role": "Customer",
-    "address": "975 Academy Way"
+    "address": "975 Academy Way, Kelowna, BC"
   },
   "leyla": {
     "email": "leyl7aa@gmail.com",
@@ -21,6 +21,6 @@
     "password": "$2b$12$vzUjA8HcUzyLz47p1M72tei//wwRwSncilTsJGAF9UrB/eUj87.Zy",
     "username": "leyla",
     "role": "admin",
-    "address": "975 Academy Way"
+    "address": "975 Academy Way, Kelowna, BC"
   }
 }
