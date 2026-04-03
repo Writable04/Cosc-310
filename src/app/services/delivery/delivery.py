@@ -62,11 +62,11 @@ class DeliveryService:
 
     def get_past_orders(
         self,
-        user_id: int,
+        username: str,  # Changed from user_id: int → username: str
         restaurant: str | None = None,
         date: str | None = None,
     ) -> list[DeliveryOrder]:
-        orders = self.repo.get_user_orders(user_id, restaurant, date)
+        orders = self.repo.get_user_orders(username, restaurant, date)
         return [self._with_eta(o) for o in orders]
 
     async def auto_progress(self, order_id: str) -> None:

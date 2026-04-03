@@ -11,7 +11,8 @@ class DeliveryStorage(Storage[dict]):
     def save_order(self, order: DeliveryOrder) -> DeliveryOrder:
         self.write(order.order_id, order.model_dump(mode="json"))
 
-        user_key = f"user:{order.user_id}"
+        # Index by username (str) instead of user_id (int)
+        user_key = f"user:{order.username}"
         existing = self.read(user_key)
         order_ids: list = existing if isinstance(existing, list) else []
         if order.order_id not in order_ids:
@@ -38,11 +39,11 @@ class DeliveryStorage(Storage[dict]):
 
     def get_user_orders(
         self,
-        user_id: int,
+        username: str,          # Changed from user_id: int → username: str
         restaurant: str | None = None,
         date: str | None = None,          
     ) -> list[DeliveryOrder]:
-        user_key = f"user:{user_id}"
+        user_key = f"user:{username}"
         order_ids = self.read(user_key)
         if not order_ids:
             return []
@@ -56,7 +57,6 @@ class DeliveryStorage(Storage[dict]):
                 continue
             if date and not order.created_at.startswith(date):
                 continue
-
             orders.append(order)
 
         orders.sort(key=lambda o: o.created_at, reverse=True)
