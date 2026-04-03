@@ -21,4 +21,3 @@ class Cart(BaseModel):
     appliedCombos: list[AppliedCombos] = []
     totalDiscount: float = 0.0
     checkout_total: float = 0.0
-    

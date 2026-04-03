@@ -7,6 +7,7 @@ class AccountInfo(BaseModel):
     username: str
     role: str
     address: str = ""
+    subscription: int = 0 # 0 = free, 1 = premium, 2 = super premium
 
 class AuthenticationResponse(BaseModel):
     token: str

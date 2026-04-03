@@ -204,7 +204,7 @@ class CartStorage(Storage[Cart]):
         theCart['subtotal'] = self.updateSubtotal(theCart)
         discount = self.getTotalDiscount(theCart)
         theCart['totalDiscount'] = discount
-        theCart['checkout_total'] = round(theCart['subtotal'] - discount, 2)
+        theCart['checkout_total'] = round(self.updateCheckoutTotal, 2)
 
         self.write(str(UserID), theCart)
         return True
@@ -256,14 +256,13 @@ class CartStorage(Storage[Cart]):
         theCart = self.read(UserID)
         if not theCart:
             return 0.0
-
+        
         subtotal = theCart["subtotal"]
         discount = self.getTotalDiscount(theCart)
-
         checkout_total = subtotal - discount
 
         theCart["checkout_total"] = round(checkout_total, 2)
         self.write(UserID, theCart)
         
         return checkout_total
-        
+    
