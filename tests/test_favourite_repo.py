@@ -9,24 +9,16 @@ from app.schemas.resturantSchema import Resturant
 
 
 def _stub_restaurant(restaurant_id: int) -> Resturant:
-    return Resturant(
-        restaurant_id=restaurant_id,
-        name="Test",
-        cuisine="Test",
-        restaurantAddress="Test",
-    )
-
+    return Resturant(restaurant_id=restaurant_id, name="Test", cuisine="Test", restaurantAddress="Test")
 
 def _stub_item(item_id: int) -> Item:
-    return Item(item_id=item_id, name="Test", price="10", menu_id=0)
+    return Item(item_id=item_id, name="Test", price=10, menu_id=0)
 
 
 @pytest.fixture
 def mock_restaurants() -> MagicMock:
     mock_restaurants = MagicMock()
-    mock_restaurants.find_resturant.side_effect = (
-        lambda restaurant_id: _stub_restaurant(restaurant_id) if restaurant_id in (1, 2) else None
-    )
+    mock_restaurants.find_resturant.side_effect = lambda restaurant_id: _stub_restaurant(restaurant_id) if restaurant_id in (1, 2) else None
     return mock_restaurants
 
 
