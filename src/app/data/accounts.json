@@ -22,5 +22,13 @@
     "username": "leyla",
     "role": "admin",
     "address": "975 Academy Way"
+  },
+  "idan": {
+    "email": "idannlisman@gmail.com",
+    "token": "67fb57d1-5e77-48b9-8bf4-592f84860767",
+    "password": "$2b$12$9u0DdJ.IbSOXhIg1MBHtE.LN6smphU2N0sOjN7Wg2Fbuqx9r8jXJC",
+    "username": "idan",
+    "role": "admin",
+    "address": "1200 Discovery Ave Kelowna BC"
   }
 }
