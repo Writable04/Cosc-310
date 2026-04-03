@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.routers.dependencies import require_auth, registration
-from app.schemas.authenticationSchema import AuthenticationResponse
+from app.routers.dependencies import accounts_storage, require_auth, registration
+from app.schemas.authenticationSchema import AccountInfo, AuthenticationResponse
 
 router = APIRouter()
 
@@ -21,3 +21,10 @@ def login(username: str, password: str) -> AuthenticationResponse:
         return {"status": "success", "message": "User logged in successfully", "token": token}
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+@router.get("/account/{username}/{token}" , dependencies=[Depends(require_auth)])
+def get_account_info(username: str) -> dict:
+    account = accounts_storage.get_account_info(username)
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {"email": account.email, "role": account.role, "address": account.address}
