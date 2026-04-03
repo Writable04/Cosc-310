@@ -12,7 +12,7 @@ def _stub_restaurant(restaurant_id: int) -> Resturant:
     return Resturant(restaurant_id=restaurant_id, name="Test", cuisine="Test", restaurantAddress="Test")
 
 def _stub_item(item_id: int) -> Item:
-    return Item(item_id=item_id, name="Test", price=10, menu_id=0)
+    return Item(item_id=item_id, name="Test", price="10", menu_id=0)
 
 
 @pytest.fixture
