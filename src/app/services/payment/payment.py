@@ -43,7 +43,7 @@ class PaymentService:
         self.cart_repo = CartStorage()
         self.accounts_repo = AccountsStorage()
 
-    def add_payment_method(self, user_id: int, method: PaymentMethod) -> SavedPaymentMethod:
+    def add_payment_method(self, username: str, method: PaymentMethod) -> SavedPaymentMethod:
         is_valid, reason = _validate_payment_method(method)
         if not is_valid:
             raise ValueError(reason)
@@ -55,16 +55,16 @@ class PaymentService:
             expiry_year=method.expiry_year,
             card_type=method.card_type,
         )
-        return self.payment_repo.save_method(user_id, saved)
+        return self.payment_repo.save_method(username, saved)
 
-    def get_payment_methods(self, user_id: int) -> list[SavedPaymentMethod]:
-        return self.payment_repo.get_all_methods(user_id)
+    def get_payment_methods(self, username: str) -> list[SavedPaymentMethod]:
+        return self.payment_repo.get_all_methods(username)
 
-    def delete_payment_method(self, user_id: int, method_id: str) -> bool:
-        return self.payment_repo.delete_method(user_id, method_id)
+    def delete_payment_method(self, username: str, method_id: str) -> bool:
+        return self.payment_repo.delete_method(username, method_id)
 
-    def set_default_method(self, user_id: int, method_id: str) -> bool:
-        return self.payment_repo.set_default(user_id, method_id)
+    def set_default_method(self, username: str, method_id: str) -> bool:
+        return self.payment_repo.set_default(username, method_id)
 
     def process_payment(self, request: PaymentRequest) -> PaymentResponse:
         subtotal = round(request.amount, 2)
@@ -75,7 +75,7 @@ class PaymentService:
             return PaymentResponse(
                 status=PaymentStatus.FAILED,
                 message="Amount must be greater than 0.",
-                subtotal=subtotal, tax=tax, amount=total,
+                subtotal=subtotal, tax=tax, delivery_fee=0.0, amount=total,
                 retry_allowed=True,
             )
 
@@ -83,7 +83,7 @@ class PaymentService:
             return PaymentResponse(
                 status=PaymentStatus.FAILED,
                 message=f"Order total ${total:.2f} (incl. tax) exceeds the maximum of ${MAX_ORDER_AMOUNT:.2f}.",
-                subtotal=subtotal, tax=tax, amount=total,
+                subtotal=subtotal, tax=tax, delivery_fee=0.0, amount=total,
                 retry_allowed=False,
             )
 
@@ -92,12 +92,13 @@ class PaymentService:
         if request.new_method:
             card_to_validate = request.new_method
         elif request.method_id:
-            saved = self.payment_repo.get_method(request.user_id, request.method_id)
+            # Now keyed by username (str)
+            saved = self.payment_repo.get_method(request.username, request.method_id)
             if saved is None:
                 return PaymentResponse(
                     status=PaymentStatus.FAILED,
                     message="Saved payment method not found.",
-                    subtotal=subtotal, tax=tax, amount=total,
+                    subtotal=subtotal, tax=tax, delivery_fee=0.0, amount=total,
                     retry_allowed=True,
                 )
             card_to_validate = PaymentMethod(
@@ -109,12 +110,12 @@ class PaymentService:
                 card_type=saved.card_type,
             )
         else:
-            default = self.payment_repo.get_default_method(request.user_id)
+            default = self.payment_repo.get_default_method(request.username)
             if default is None:
                 return PaymentResponse(
                     status=PaymentStatus.FAILED,
                     message="No payment method provided and no default method saved.",
-                    subtotal=subtotal, tax=tax, amount=total,
+                    subtotal=subtotal, tax=tax, delivery_fee=0.0, amount=total,
                     retry_allowed=True,
                 )
             card_to_validate = PaymentMethod(
@@ -131,12 +132,13 @@ class PaymentService:
             return PaymentResponse(
                 status=PaymentStatus.FAILED,
                 message=f"Payment failed: {reason}",
-                subtotal=subtotal, tax=tax, amount=total,
+                subtotal=subtotal, tax=tax, delivery_fee=0.0, amount=total,
                 retry_allowed=True,
             )
 
         transaction_id = str(uuid.uuid4())
-        self.cart_repo.clearUserCart(request.user_id)
+        # Clear cart by username (str) now that payment repo is username-keyed
+        self.cart_repo.clearUserCart(request.username)
         self._send_payment_notification(request.username, subtotal, tax, total, transaction_id)
 
         return PaymentResponse(
@@ -145,10 +147,10 @@ class PaymentService:
             transaction_id=transaction_id,
             subtotal=subtotal,
             tax=tax,
+            delivery_fee=0.0,
             amount=total,
             retry_allowed=False,
         )
-
 
     def _send_payment_notification(self, username: str, subtotal: float, tax: float, total: float, transaction_id: str) -> None:
         try:

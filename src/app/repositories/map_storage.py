@@ -65,6 +65,8 @@ class MapStorage():
             #print(directions_result.json()['error']['message'])
             return(-1.0)
 
-test = MapStorage().calculateDeliveryTimeMins(origin="1137 Alumni Ave, Kelowna, BC", 
-                                              destination="2271 Harvey Ave, Kelowna, BC")
-print(test)
+
+if __name__ == "__main__":
+    test = MapStorage().calculateDeliveryTimeMins(origin="1137 Alumni Ave, Kelowna, BC",
+                                                  destination="2271 Harvey Ave, Kelowna, BC")
+    print(test)
