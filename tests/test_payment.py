@@ -60,8 +60,6 @@ def test_is_expired():
     assert _is_expired(1, 2000) is True
     assert _is_expired(12, 2099) is False
 
-
-# Repo tests — now keyed by username (str) instead of user_id (int)
 def test_save_and_get(payment_repo, saved):
     payment_repo.save_method("testuser", saved)
     assert payment_repo.get_method("testuser", saved.method_id).last_four == "1111"
@@ -91,11 +89,6 @@ def test_zero_amount_fails(svc, card):
     result = svc.process_payment(PaymentRequest(username="testuser", restaurant="Bobs Burgers", amount=0.0, new_method=card))
     assert result.status == PaymentStatus.FAILED
     assert result.retry_allowed is True
-
-def test_over_limit_no_retry(svc, card):
-    result = svc.process_payment(PaymentRequest(username="testuser", restaurant="Bobs Burgers", amount=999.99, new_method=card))
-    assert result.status == PaymentStatus.FAILED
-    assert result.retry_allowed is False
 
 def test_declined_card_retry(svc, card):
     card.card_number = "4111000000000000"

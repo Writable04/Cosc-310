@@ -21,7 +21,6 @@ STATUS_PROGRESSION = [
 
 class DeliveryOrder(BaseModel):
     order_id: str
-    user_id: int
     username: str
     restaurant: str
     items: list[dict]
@@ -35,3 +34,23 @@ class DeliveryOrder(BaseModel):
 
 class DeliveryStatusUpdate(BaseModel):
     status: DeliveryStatus
+
+class OrderStatusResponse(BaseModel):
+    order_id: str
+    status: DeliveryStatus
+    status_label: str
+    eta_seconds: Optional[int]
+    eta_minutes: Optional[int]
+    estimated_delivery: Optional[str] = None
+
+class OrderSummaryResponse(BaseModel):
+    order_id: str
+    restaurant: str
+    status: DeliveryStatus
+    status_label: str
+    total: float
+    delivery_fee: float = 0.0
+    eta_seconds: Optional[int]
+    eta_minutes: Optional[int]
+    created_at: str
+    estimated_delivery: Optional[str] = None
