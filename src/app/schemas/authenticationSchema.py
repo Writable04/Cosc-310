@@ -7,6 +7,7 @@ class AccountInfo(BaseModel):
     username: str
     role: str
     address: str = ""
+    reward_points: int = 0
 
 class AuthenticationResponse(BaseModel):
     token: str

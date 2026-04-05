@@ -23,7 +23,12 @@
     "24137713-f853-40b4-a321-2e2b990f2569",
     "a8695e16-b4e1-497f-9653-f179643c2492",
     "c7070e86-aef5-4958-b2a1-3389e79975d2",
-    "8583dda4-e022-4764-a85b-9fd8877412f5"
+    "8583dda4-e022-4764-a85b-9fd8877412f5",
+    "72034e5c-a43d-44df-bc6d-b2fcf85b6e0e",
+    "49110da0-456f-4915-acc4-c9b15787302f",
+    "22190b17-6d74-4731-85ec-bb14e2a37da4",
+    "dfc2d218-ce5e-4c12-aa2b-4039ad98dc71",
+    "c4fb00ed-035e-404f-89d3-31874bc94aa0"
   ],
   "853521f0-1550-44b2-920f-a51bff1b7fe6": {
     "order_id": "853521f0-1550-44b2-920f-a51bff1b7fe6",
@@ -257,10 +262,129 @@
       }
     ],
     "total": 59.61,
-    "status": "In Transit",
+    "status": "Delivered",
     "eta_seconds": null,
     "created_at": "2026-04-05T19:24:42.893249+00:00",
-    "updated_at": "2026-04-05T19:25:46.664229+00:00",
+    "updated_at": "2026-04-05T19:41:48.704824+00:00",
     "estimated_delivery": "2026-04-05T19:41:42.893249+00:00"
+  },
+  "72034e5c-a43d-44df-bc6d-b2fcf85b6e0e": {
+    "order_id": "72034e5c-a43d-44df-bc6d-b2fcf85b6e0e",
+    "username": "leyla",
+    "restaurant": "Bobs Burgers",
+    "items": [
+      {
+        "name": "Burger",
+        "itemID": 7,
+        "quantity": 1,
+        "price": 41.17
+      },
+      {
+        "name": "Cookie",
+        "itemID": 5,
+        "quantity": 1,
+        "price": 10.31
+      }
+    ],
+    "total": 59.73,
+    "status": "In Process",
+    "eta_seconds": null,
+    "created_at": "2026-04-05T20:20:27.372414+00:00",
+    "updated_at": "2026-04-05T20:30:31.862787+00:00",
+    "estimated_delivery": "2026-04-05T20:37:27.372414+00:00"
+  },
+  "49110da0-456f-4915-acc4-c9b15787302f": {
+    "order_id": "49110da0-456f-4915-acc4-c9b15787302f",
+    "username": "leyla",
+    "restaurant": "Pauls Poutine",
+    "items": [
+      {
+        "name": "Cup cake",
+        "itemID": 9,
+        "quantity": 2,
+        "price": 34.62
+      }
+    ],
+    "total": 83.06,
+    "status": "In Process",
+    "eta_seconds": null,
+    "created_at": "2026-04-05T20:21:34.055460+00:00",
+    "updated_at": "2026-04-05T20:31:39.279328+00:00",
+    "estimated_delivery": "2026-04-05T20:49:34.055460+00:00"
+  },
+  "22190b17-6d74-4731-85ec-bb14e2a37da4": {
+    "order_id": "22190b17-6d74-4731-85ec-bb14e2a37da4",
+    "username": "leyla",
+    "restaurant": "Pops Pizza",
+    "items": [
+      {
+        "name": "Shawarma",
+        "itemID": 10,
+        "quantity": 1,
+        "price": 40.82
+      },
+      {
+        "name": "Briyani rice",
+        "itemID": 11,
+        "quantity": 1,
+        "price": 24.82
+      }
+    ],
+    "total": 69.4,
+    "status": "Pending",
+    "eta_seconds": null,
+    "created_at": "2026-04-05T20:36:37.194255+00:00",
+    "updated_at": "2026-04-05T20:36:37.194255+00:00",
+    "estimated_delivery": "2026-04-05T20:46:37.194255+00:00"
+  },
+  "dfc2d218-ce5e-4c12-aa2b-4039ad98dc71": {
+    "order_id": "dfc2d218-ce5e-4c12-aa2b-4039ad98dc71",
+    "username": "leyla",
+    "restaurant": "Tulas Thai",
+    "items": [
+      {
+        "name": "Beef pie",
+        "itemID": 12,
+        "quantity": 1,
+        "price": 42.35
+      },
+      {
+        "name": "Pizza",
+        "itemID": 13,
+        "quantity": 1,
+        "price": 40.09
+      }
+    ],
+    "total": 90.2,
+    "status": "In Process",
+    "eta_seconds": null,
+    "created_at": "2026-04-05T20:49:10.348135+00:00",
+    "updated_at": "2026-04-05T21:00:32.812777+00:00",
+    "estimated_delivery": "2026-04-05T21:08:10.348135+00:00"
+  },
+  "c4fb00ed-035e-404f-89d3-31874bc94aa0": {
+    "order_id": "c4fb00ed-035e-404f-89d3-31874bc94aa0",
+    "username": "leyla",
+    "restaurant": "Carlys Curry",
+    "items": [
+      {
+        "name": "Briyani rice",
+        "itemID": 11,
+        "quantity": 1,
+        "price": 24.82
+      },
+      {
+        "name": "CoffeeBoba tea",
+        "itemID": 15,
+        "quantity": 1,
+        "price": 13.76
+      }
+    ],
+    "total": 40.51,
+    "status": "Pending",
+    "eta_seconds": null,
+    "created_at": "2026-04-05T21:03:27.730895+00:00",
+    "updated_at": "2026-04-05T21:03:27.730895+00:00",
+    "estimated_delivery": "2026-04-05T21:17:27.730895+00:00"
   }
 }

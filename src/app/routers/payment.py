@@ -5,6 +5,7 @@ from app.schemas.paymentSchema import (
     SavedPaymentMethod,
 )
 from app.services.payment.payment import PaymentService
+from app.routers.dependencies import accounts_storage, require_auth
 
 router = APIRouter()
 ps = PaymentService()
@@ -30,3 +31,12 @@ def set_default_payment_method(username: str, method_id: str):
     if not ps.set_default_method(username, method_id):
         raise HTTPException(status_code=404, detail="Payment method not found.")
     return {"detail": "Default payment method updated."}
+
+@router.get("/reward-points", response_model=dict)
+def get_reward_points(username: str):
+    points = accounts_storage.get_reward_points(username)
+    return {
+        "username": username,
+        "reward_points": points,
+        "discount_value": round(points / 20, 2),
+    }

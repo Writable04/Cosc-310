@@ -22,12 +22,13 @@ class SavedPaymentMethod(BaseModel):
 class CheckoutRequest(BaseModel):
     method_id: Optional[str] = None
     new_method: Optional[PaymentMethod] = None
+    redeem_points: bool = False
 
     @model_validator(mode="after")
     def check_mutually_exclusive(self) -> "CheckoutRequest":
         if self.method_id and self.new_method:
             raise ValueError(
-                "Provide either 'method_id' (use a saved card) or 'new_method' (enter a new card), not both."
+                "Provide either a saved new card, not both."
             )
         return self
 
@@ -47,9 +48,12 @@ class PaymentResponse(BaseModel):
     status: PaymentStatus
     message: str
     transaction_id: Optional[str] = None
-    order_id: Optional[str] = None  # set after delivery is created so frontend can track
+    order_id: Optional[str] = None  
     subtotal: float
     tax: float
     delivery_fee: float = 0.0
     amount: float
+    points_discount: float = 0.0      
+    points_earned: int = 0             
+    reward_points_balance: int = 0
     retry_allowed: bool = False
