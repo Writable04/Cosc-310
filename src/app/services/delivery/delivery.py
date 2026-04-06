@@ -11,13 +11,11 @@ from app.services.notifications.notifications import Notification
 
 IN_PROCESS_SECONDS = 600  # 10 min prep time
 
-
 def _get_transit_seconds(username: str, restaurant_name: str) -> int:
     user_address = AccountsStorage().get_address(username)
     restaurant = ResturantStorage().find_resturant_query(restaurant_name, "name")
     minutes = MapStorage().calculateDeliveryTimeMins(restaurant.restaurantAddress, user_address)
     return minutes * 60
-
 
 def _format_estimated_delivery(estimated_delivery: str) -> str:
     from datetime import datetime, timezone
@@ -32,7 +30,6 @@ def _format_estimated_delivery(estimated_delivery: str) -> str:
         return est_local.strftime("%I:%M %p")  #12:21 PM"
     except Exception:
         return estimated_delivery
-
 
 class DeliveryService:
     def __init__(self) -> None:
@@ -75,13 +72,14 @@ class DeliveryService:
             self.repo.get_order(order_id).username,
             self.repo.get_order(order_id).restaurant,
         )
-        stage_delays = {
-            DeliveryStatus.IN_PROCESS: IN_PROCESS_SECONDS,
-            DeliveryStatus.IN_TRANSIT: transit_seconds,
-            DeliveryStatus.DELIVERED:  0,
+        # In Process right away, In Transit after 10mins, Delivered after eta time
+        sleep_before = {
+            DeliveryStatus.IN_PROCESS: 0,
+            DeliveryStatus.IN_TRANSIT: IN_PROCESS_SECONDS,
+            DeliveryStatus.DELIVERED:  transit_seconds,
         }
         for status in STATUS_PROGRESSION[1:]:
-            await asyncio.sleep(stage_delays.get(status, 0))
+            await asyncio.sleep(sleep_before.get(status, 0))
             updated = self.repo.update_status(order_id, status)
             self._notify(updated, self._status_message(status))
 
