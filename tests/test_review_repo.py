@@ -41,5 +41,5 @@ def test_find_reviews_by_resturant_id(tmp_path) -> None:
 
     assert len(reviews) == 2
     assert all(review.resturant_id == 1 for review in reviews)
-    assert [review.review_id for review in reviews] == ["rev1", "rev3"]
+    assert [review.review_id for review in reviews] == ["review1", "review3"]
 
