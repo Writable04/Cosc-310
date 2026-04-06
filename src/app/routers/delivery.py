@@ -68,6 +68,11 @@ def update_delivery_status(order_id: str, body: DeliveryStatusUpdate, username: 
     require_auth(username, token, request)
     return ds.update_status(order_id, body.status)
 
+@router.get("/{order_id}/is-delivered", response_model=dict)
+def is_delivered(order_id: str):
+    """Checks if order is delivered"""
+    order = DeliveryService().get_order(order_id)
+    return {"order_id": order_id, "is_delivered": order.status == DeliveryStatus.DELIVERED}
 
 @router.get("/{order_id}", response_model=DeliveryOrder)
 def track_order(order_id: str, username: str, token: str, request: Request):
