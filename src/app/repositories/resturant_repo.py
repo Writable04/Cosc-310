@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +15,9 @@ class ResturantStorage(CSVStorage):
         fields = list(Resturant.model_fields.keys())
         super().__init__(path,fields)
 
+    
     def new_resturant(self, resturant: Resturant):
-        self.write_row(resturant.dict())
+        self.write_row(self._serialize_row(resturant.dict()))
         return resturant
 
     def find_resturant(self, restaurant_id: int, user_address: str = None) -> Resturant:
@@ -36,7 +38,7 @@ class ResturantStorage(CSVStorage):
         return None
 
     def update_resturant(self, restaurant_id: int, updated_data: dict):
-        self.update("restaurant_id", str(restaurant_id), updated_data)
+        self.update("restaurant_id", str(restaurant_id), self._serialize_row(updated_data))
         row = self.find_by("restaurant_id", str(restaurant_id))
         if row:
             return Resturant(**row)

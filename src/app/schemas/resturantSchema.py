@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 class Resturant(BaseModel):
     restaurant_id: int = 0
@@ -8,4 +9,5 @@ class Resturant(BaseModel):
     restaurantAddress: str
     durationMinutes: int = 0
     distanceKM: float = 0.0
+    reviews: list[str]
     
