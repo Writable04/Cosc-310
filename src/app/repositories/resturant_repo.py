@@ -15,9 +15,8 @@ class ResturantStorage(CSVStorage):
         fields = list(Resturant.model_fields.keys())
         super().__init__(path,fields)
 
-    
     def new_resturant(self, resturant: Resturant):
-        self.write_row(self.resturant.dict())
+        self.write_row(resturant.dict())
         return resturant
 
     def find_resturant(self, restaurant_id: int, user_address: str = None) -> Resturant:
