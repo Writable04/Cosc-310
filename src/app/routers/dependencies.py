@@ -40,3 +40,16 @@ def require_auth(username: str, token: str, request: Request) -> bool:
             raise HTTPException(status_code=401, detail="Unauthorized")
         
     return True
+
+def require_resturant_manager(username: str, id: int | None) -> bool:
+    if id is None:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    resturant = resturant_storage.find_resturant(id)
+    user_role = accounts_storage.get_account_role(username)
+    if user_role is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    elif (username != resturant.owner and user_role != 'admin'):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    return True
