@@ -29,7 +29,8 @@ def post_resturant(restaurant: Resturant, username: str):
     try:
         resturants.append(restaurant.dict())
         restaurant = assign_restaurant_id(restaurant, resturant_storage)
-        resturant_storage.new_resturant({**restaurant, "owner": username})
+        restaurant.owner = username
+        resturant_storage.new_resturant(restaurant)
         return resturants
 
     except ValueError as error:
