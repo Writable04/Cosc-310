@@ -1,39 +1,46 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from app.routers.dependencies import cart_storage, require_auth, accounts_storage
-from app.schemas.paymentSchema import PaymentRequest, PaymentResponse, PaymentMethod
+from app.schemas.paymentSchema import CheckoutRequest, PaymentRequest, PaymentResponse
 from app.services.payment.payment import PaymentService
+from app.services.delivery.delivery import DeliveryService
 from app.repositories.resturant_repo import ResturantStorage
 from app.repositories.map_storage import MapStorage
-from typing import Optional
 
 router = APIRouter()
 
-DELIVERY_FEE_PER_KM = 0.05
+DELIVERY_FEE_PER_KM = 0.50
 MIN_DELIVERY_FEE    = 2.00
-TAX_RATE            = 0.05
 
 
 def _calculate_delivery_fee(user_address: str, restaurant_name: str) -> float:
     try:
-        restaurant = ResturantStorage().find_resturant_query(restaurant_name, "name")
+        repo = ResturantStorage()
+
+        # Try lookup by name first, then fall back to restaurant_id
+        # This handles cases where cart.restaurant stores a name or an id
+        restaurant = repo.find_resturant_query(restaurant_name, "name")
+        if restaurant is None:
+            restaurant = repo.find_resturant_query(restaurant_name, "restaurant_id")
         if restaurant is None:
             return MIN_DELIVERY_FEE
- 
+
         distance_km = MapStorage().calculateDeliveryDistanceKM(user_address, restaurant.restaurantAddress)
         if distance_km < 0:
             return MIN_DELIVERY_FEE
- 
-        return round(max(distance_km * DELIVERY_FEE_PER_KM, MIN_DELIVERY_FEE), 2)
-    except Exception:
+
+        fee = round(max(distance_km * DELIVERY_FEE_PER_KM, MIN_DELIVERY_FEE), 2)
+        print(f"Delivery fee: {fee} (distance: {distance_km:.2f} km from '{user_address}' to '{restaurant.restaurantAddress}')")
+        return fee
+    except Exception as e:
+        print(f"Delivery fee calculation error: {e}")
         return MIN_DELIVERY_FEE
 
 
 @router.post("/{username}/{token}", response_model=PaymentResponse, dependencies=[Depends(require_auth)])
 def checkout(
     username: str,
-    user_id: int,
-    method_id: Optional[str] = None,
-    new_method: Optional[PaymentMethod] = None,
+    background_tasks: BackgroundTasks,
+    body: CheckoutRequest = CheckoutRequest(),
 ):
     ps = PaymentService()
 
@@ -54,16 +61,29 @@ def checkout(
     total_before_tax = round(cart_amount + delivery_fee, 2)
 
     payment_request = PaymentRequest(
-        user_id=user_id,
         username=username,
         restaurant=cart.restaurant,
         amount=total_before_tax,
-        method_id=method_id,
-        new_method=new_method,
+        method_id=body.method_id,
+        new_method=body.new_method,
     )
     result = ps.process_payment(payment_request)
 
     if result.status != "success":
         raise HTTPException(status_code=402, detail=result.message)
 
+    result.delivery_fee = delivery_fee
+    result.amount = round(result.amount + delivery_fee, 2)
+    
+    ds = DeliveryService()
+    items = [i.model_dump(mode="json") for i in cart.items]
+    order = ds.start_delivery(
+        username=username,
+        restaurant=cart.restaurant,
+        items=items,
+        total=result.amount,
+    )
+    background_tasks.add_task(ds.auto_progress, order.order_id)
+
+    result.order_id = order.order_id  # return order_id so frontend can track delivery
     return result
