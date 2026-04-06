@@ -7,6 +7,7 @@ from app.services.authentication.registration import Registration
 from fastapi import HTTPException, Request
 from app.services.notifications.notifications import Notification
 from app.repositories.cart_repo import CartStorage
+from app.repositories.favourite_repo import FavouriteStorage
 
 
 accounts_storage = AccountsStorage()
@@ -17,6 +18,7 @@ resturant_storage = ResturantStorage()
 menu_storage = MenuStorage()
 item_storage = ItemStorage()
 cart_storage = CartStorage()
+favourite_storage = FavouriteStorage(resturant_storage, item_storage)
 
 admin_routes=['/notification']
 resturant_manager_routes=['/dataset']

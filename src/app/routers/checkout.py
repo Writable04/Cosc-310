@@ -73,11 +73,11 @@ def checkout(
         raise HTTPException(status_code=402, detail=result.message)
 
     result.delivery_fee = delivery_fee
-
+    result.amount = round(result.amount + delivery_fee, 2)
+    
     ds = DeliveryService()
     items = [i.model_dump(mode="json") for i in cart.items]
     order = ds.start_delivery(
-        user_id=0,
         username=username,
         restaurant=cart.restaurant,
         items=items,
