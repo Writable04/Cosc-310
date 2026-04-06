@@ -2,10 +2,20 @@ from fastapi import FastAPI
 from app import __version__
 from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery
 from app.schemas.baseSchema import HealthResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(
     title="COSC 310 Project",
     version=__version__,
+)
+# front end 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
