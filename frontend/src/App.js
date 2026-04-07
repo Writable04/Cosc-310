@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 
 const API_BASE_URL = "http://localhost:8000";
+const CREATE_RESTAURANT_OPTION = "__create_new_restaurant__";
 
 const fallbackRestaurants = [
   {
@@ -121,6 +122,7 @@ function getComboItemCounts(comboItems = []) {
 function mapRestaurant(restaurant) {
   return {
     id: restaurant.id || restaurant.restaurant_id || restaurant.name,
+    restaurant_id: restaurant.restaurant_id || restaurant.id,
     name: restaurant.name || "Restaurant",
     cuisine: restaurant.cuisine || "Other",
     rating: Number(restaurant.rating || 0),
@@ -132,6 +134,7 @@ function mapRestaurant(restaurant) {
       || restaurant.restaurantAddress
       || "Fresh meals prepared quickly and delivered with care.",
     image: restaurant.image || getCuisineImage(restaurant.cuisine),
+    owner: restaurant.owner || "",
     distanceKM: restaurant.distanceKM,
     restaurantAddress: restaurant.restaurantAddress,
   };
@@ -140,9 +143,106 @@ function mapRestaurant(restaurant) {
 function mapMenuItem(item) {
   return {
     id: item.item_id || item.id,
+    item_id: item.item_id || item.id,
     name: item.name || "Menu item",
     price: Number(item.price || 0),
     menuId: item.menu_id,
+  };
+}
+
+function normalizeRole(role) {
+  return String(role || "").trim().toLowerCase();
+}
+
+function parseNumberList(rawValue) {
+  return String(rawValue || "")
+    .split(",")
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value));
+}
+
+function serializeNumberList(values) {
+  return Array.isArray(values) ? values.join(", ") : "";
+}
+
+function parseComboConfig(rawValue, menuId) {
+  if (!String(rawValue || "").trim()) {
+    return [];
+  }
+
+  const parsed = JSON.parse(rawValue);
+  if (!Array.isArray(parsed)) {
+    throw new Error("Combos must be a JSON array.");
+  }
+
+  return parsed.map((combo) => ({
+    combo_id: Number(combo.combo_id),
+    comboItems: Array.isArray(combo.comboItems) ? combo.comboItems.map(Number) : [],
+    discountPrice: Number(combo.discountPrice || 0),
+    menu_id: Number(combo.menu_id || menuId),
+  }));
+}
+
+function serializeComboConfig(combos) {
+  if (!Array.isArray(combos) || !combos.length) {
+    return "";
+  }
+
+  return JSON.stringify(combos, null, 2);
+}
+
+function emptyRestaurantForm() {
+  return {
+    restaurant_id: "",
+    name: "",
+    cuisine: "",
+    rating: "0",
+    restaurantAddress: "",
+    owner: "",
+  };
+}
+
+function emptyMenuForm() {
+  return {
+    itemsText: "",
+    combosText: "",
+  };
+}
+
+function emptyItemForm(menuId = "") {
+  return {
+    item_id: "0",
+    name: "",
+    price: "",
+    menu_id: menuId ? String(menuId) : "",
+  };
+}
+
+function emptyComboForm() {
+  return {
+    combo_id: "",
+    comboItemsText: "",
+    discountPrice: "0",
+  };
+}
+
+function mapCombo(combo) {
+  return {
+    combo_id: Number(combo.combo_id || 0),
+    comboItems: Array.isArray(combo.comboItems) ? combo.comboItems.map(Number) : [],
+    discountPrice: Number(combo.discountPrice || 0),
+    menu_id: Number(combo.menu_id || 0),
+  };
+}
+
+function emptyPaymentForm() {
+  return {
+    card_holder_name: "",
+    card_number: "",
+    expiry_month: "",
+    expiry_year: "",
+    cvv: "",
+    card_type: "credit",
   };
 }
 
@@ -167,6 +267,7 @@ function App() {
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const [hasLoadedLiveData, setHasLoadedLiveData] = useState(false);
   const [showAuthGate, setShowAuthGate] = useState(true);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -179,7 +280,38 @@ function App() {
   const [cartNotice, setCartNotice] = useState("");
   const [pendingCartKey, setPendingCartKey] = useState("");
   const [showCart, setShowCart] = useState(false);
+  const [showFavourites, setShowFavourites] = useState(false);
+  const [favouriteRestaurants, setFavouriteRestaurants] = useState([]);
+  const [isFavouritesLoading, setIsFavouritesLoading] = useState(false);
+  const [favouritesError, setFavouritesError] = useState("");
+  const [favouritesNotice, setFavouritesNotice] = useState("");
+  const [pendingFavouriteRestaurantId, setPendingFavouriteRestaurantId] = useState("");
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutNotice, setCheckoutNotice] = useState("");
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [checkoutMethodMode, setCheckoutMethodMode] = useState("saved");
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState("");
+  const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
+  const [checkoutResult, setCheckoutResult] = useState(null);
+  const [checkoutOrderSummary, setCheckoutOrderSummary] = useState(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showManagementPanel, setShowManagementPanel] = useState(false);
+  const [managementRestaurantId, setManagementRestaurantId] = useState("");
+  const [isCreatingManagementRestaurant, setIsCreatingManagementRestaurant] = useState(false);
+  const [managementNotice, setManagementNotice] = useState("");
+  const [managementError, setManagementError] = useState("");
+  const [isManagementLoading, setIsManagementLoading] = useState(false);
+  const [managementMenuExists, setManagementMenuExists] = useState(false);
+  const [managementRestaurants, setManagementRestaurants] = useState([]);
+  const [managementItems, setManagementItems] = useState([]);
+  const [managementCombos, setManagementCombos] = useState([]);
+  const [restaurantForm, setRestaurantForm] = useState(emptyRestaurantForm);
+  const [menuForm, setMenuForm] = useState(emptyMenuForm);
+  const [itemForm, setItemForm] = useState(emptyItemForm);
+  const [comboForm, setComboForm] = useState(emptyComboForm);
 
   const fetchedRestaurants = useMemo(
     () => normalizeRestaurants(data).map(mapRestaurant),
@@ -286,6 +418,7 @@ function App() {
 
     setIsLoading(true);
     setError("");
+    setAuthNotice("");
 
     let nextToken = "";
 
@@ -304,10 +437,7 @@ function App() {
         authParams.set("validatated_password", draftConfirmPassword.trim());
         authParams.set("role", draftRole);
         authParams.set("email", draftEmail.trim());
-
-        if (draftAddress.trim()) {
-          authParams.set("address", draftAddress.trim());
-        }
+        authParams.set("address", draftAddress.trim());
       }
 
       const authResponse = await fetch(`${authUrl}?${authParams.toString()}`, {
@@ -322,6 +452,9 @@ function App() {
 
       const authPayload = await authResponse.json();
       nextToken = authPayload.token;
+      if (authMode === "register") {
+        setAuthNotice("User created successfully. Loading restaurant data now.");
+      }
     } catch (err) {
       console.error(err);
       setError(err.message || "Authentication failed.");
@@ -342,6 +475,7 @@ function App() {
       setDraftPassword("");
       setDraftConfirmPassword("");
       setDraftEmail(authMode === "register" ? draftEmail.trim() : draftEmail);
+      setDraftAddress(authMode === "register" ? draftAddress.trim() : draftAddress);
 
       const cleanUsername = encodeURIComponent(nextUsername);
       const cleanToken = encodeURIComponent(nextToken);
@@ -368,11 +502,19 @@ function App() {
         const cartPayload = await cartResponse.json();
         setCart(cartPayload);
         setCartError("");
+        try {
+          await refreshFavourites();
+        } catch (favouritesLoadError) {
+          console.error(favouritesLoadError);
+        }
       } catch (err) {
         console.error(err);
         setCartError("We loaded restaurants, but couldn't load the cart.");
       }
     } else {
+      if (authMode === "register") {
+        setAuthNotice("User created successfully, but the restaurant data could not be loaded yet. Try logging in with the new account.");
+      }
       setToken("");
     }
   };
@@ -388,6 +530,11 @@ function App() {
     setDraftAddress("");
     setShowAuthGate(true);
     setError("");
+    setAuthNotice("");
+    setShowFavourites(false);
+    setFavouriteRestaurants([]);
+    setFavouritesError("");
+    setFavouritesNotice("");
   };
 
   const handleAuthGateBack = () => {
@@ -402,6 +549,7 @@ function App() {
       setShowAuthGate(false);
       setShowAccountMenu(false);
       setError("");
+      setAuthNotice("");
     }
   };
 
@@ -439,6 +587,217 @@ function App() {
     setCart(cartPayload);
     return cartPayload;
   }, [token, username]);
+
+  const refreshFavourites = useCallback(async () => {
+    const cleanUsername = encodeURIComponent(username.trim());
+    const cleanToken = encodeURIComponent(token.trim());
+    const response = await fetch(`${API_BASE_URL}/favourites/${cleanUsername}/${cleanToken}`);
+
+    if (!response.ok) {
+      throw new Error(`Favourites request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const nextRestaurants = Array.isArray(payload?.restaurant_ids)
+      ? payload.restaurant_ids.filter(Boolean).map(mapRestaurant)
+      : [];
+
+    setFavouriteRestaurants(nextRestaurants);
+    return nextRestaurants;
+  }, [token, username]);
+
+  const loadPaymentMethods = useCallback(async () => {
+    const cleanUsername = encodeURIComponent(username.trim());
+    const response = await fetch(`${API_BASE_URL}/payment/methods?username=${cleanUsername}`);
+
+    if (!response.ok) {
+      throw new Error(`Payment methods request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const methods = Array.isArray(payload) ? payload : [];
+    setSavedPaymentMethods(methods);
+
+    const defaultMethod = methods.find((method) => method.is_default);
+    const fallbackMethod = methods[0];
+    const nextMethodId = defaultMethod?.method_id || fallbackMethod?.method_id || "";
+    setSelectedPaymentMethodId(nextMethodId);
+    setCheckoutMethodMode(nextMethodId ? "saved" : "new");
+    return methods;
+  }, [username]);
+
+  const openFavouritesPanel = useCallback(async () => {
+    setShowFavourites(true);
+    setShowAccountMenu(false);
+    setFavouritesError("");
+    setFavouritesNotice("");
+    setIsFavouritesLoading(true);
+
+    try {
+      await refreshFavourites();
+    } catch (err) {
+      console.error(err);
+      setFavouritesError("We couldn't load your favourite restaurants.");
+    } finally {
+      setIsFavouritesLoading(false);
+    }
+  }, [refreshFavourites]);
+
+  const openCheckoutPanel = useCallback(async () => {
+    if (!username.trim() || !token.trim()) {
+      setCheckoutError("Log in before checking out.");
+      return;
+    }
+
+    setCheckoutError("");
+    setCheckoutNotice("");
+    setCheckoutResult(null);
+    setCheckoutOrderSummary(null);
+    setPaymentForm(emptyPaymentForm());
+    setSavePaymentMethod(false);
+    setShowCheckout(true);
+    setIsCheckoutLoading(true);
+
+    try {
+      const latestCart = await refreshCart();
+      if (!latestCart?.items?.length) {
+        setCheckoutError("Your cart is empty. Add items before checking out.");
+        return;
+      }
+
+      await loadPaymentMethods();
+    } catch (err) {
+      console.error(err);
+      setCheckoutError("We couldn't load checkout details right now.");
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  }, [loadPaymentMethods, refreshCart, token, username]);
+
+  const handleCloseCheckout = useCallback(() => {
+    setShowCheckout(false);
+    setCheckoutError("");
+    setCheckoutNotice("");
+    setCheckoutResult(null);
+    setCheckoutOrderSummary(null);
+    setIsCheckoutLoading(false);
+  }, []);
+
+  const handleCheckoutSubmit = useCallback(async () => {
+    if (!cart?.items?.length) {
+      setCheckoutError("Your cart is empty. Add items before checking out.");
+      return;
+    }
+
+    if (checkoutMethodMode === "saved" && !selectedPaymentMethodId) {
+      setCheckoutError("Choose a saved payment method or switch to a new card.");
+      return;
+    }
+
+    if (checkoutMethodMode === "new") {
+      const requiredFields = [
+        paymentForm.card_holder_name,
+        paymentForm.card_number,
+        paymentForm.expiry_month,
+        paymentForm.expiry_year,
+        paymentForm.cvv,
+      ];
+
+      if (requiredFields.some((value) => !String(value || "").trim())) {
+        setCheckoutError("Complete all card fields before checking out.");
+        return;
+      }
+    }
+
+    setCheckoutError("");
+    setCheckoutNotice("");
+    setIsCheckoutLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+
+      let checkoutBody = {};
+
+      if (checkoutMethodMode === "saved") {
+        checkoutBody = { method_id: selectedPaymentMethodId };
+      } else {
+        const nextMethod = {
+          card_holder_name: paymentForm.card_holder_name.trim(),
+          card_number: paymentForm.card_number.trim(),
+          expiry_month: Number(paymentForm.expiry_month),
+          expiry_year: Number(paymentForm.expiry_year),
+          cvv: paymentForm.cvv.trim(),
+          card_type: paymentForm.card_type,
+        };
+
+        if (savePaymentMethod) {
+          const saveResponse = await fetch(`${API_BASE_URL}/payment/methods?username=${cleanUsername}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(nextMethod),
+          });
+
+          if (!saveResponse.ok) {
+            const failure = await saveResponse.json().catch(() => null);
+            throw new Error(failure?.detail || `Save payment method failed with status ${saveResponse.status}`);
+          }
+
+          const savedMethod = await saveResponse.json();
+          checkoutBody = { method_id: savedMethod.method_id };
+          await loadPaymentMethods();
+        } else {
+          checkoutBody = { new_method: nextMethod };
+        }
+      }
+
+      const checkoutResponse = await fetch(`${API_BASE_URL}/checkout/${cleanUsername}/${cleanToken}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(checkoutBody),
+      });
+
+      if (!checkoutResponse.ok) {
+        const failure = await checkoutResponse.json().catch(() => null);
+        throw new Error(failure?.detail || `Checkout failed with status ${checkoutResponse.status}`);
+      }
+
+      const checkoutPayload = await checkoutResponse.json();
+      setCheckoutResult(checkoutPayload);
+      setCheckoutNotice(checkoutPayload.message || "Checkout completed successfully.");
+
+      if (checkoutPayload.order_id) {
+        const summaryResponse = await fetch(
+          `${API_BASE_URL}/delivery/${checkoutPayload.order_id}/summary?username=${cleanUsername}&token=${cleanToken}`
+        );
+
+        if (summaryResponse.ok) {
+          const summaryPayload = await summaryResponse.json();
+          setCheckoutOrderSummary(summaryPayload);
+        }
+      }
+
+      const clearResponse = await fetch(`${API_BASE_URL}/cart/${cleanUsername}/${cleanToken}`, {
+        method: "PUT",
+      });
+
+      if (clearResponse.ok) {
+        const clearedCart = await clearResponse.json();
+        setCart(clearedCart);
+      } else {
+        await refreshCart();
+      }
+    } catch (err) {
+      console.error(err);
+      setCheckoutError(err.message || "We couldn't complete checkout.");
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  }, [cart, checkoutMethodMode, loadPaymentMethods, paymentForm, refreshCart, savePaymentMethod, selectedPaymentMethodId, token, username]);
 
   const handleRestaurantSelect = useCallback(async (restaurant) => {
     if (!username.trim() || !token.trim()) {
@@ -515,6 +874,57 @@ function App() {
     setMenuError("");
     setIsMenuLoading(false);
   };
+
+  const favouriteRestaurantIds = useMemo(() => {
+    return new Set(
+      favouriteRestaurants.map((restaurant) => String(restaurant.restaurant_id || restaurant.id))
+    );
+  }, [favouriteRestaurants]);
+
+  const isRestaurantFavourite = useCallback((restaurantId) => {
+    return favouriteRestaurantIds.has(String(restaurantId));
+  }, [favouriteRestaurantIds]);
+
+  const handleToggleFavouriteRestaurant = useCallback(async (restaurant) => {
+    const restaurantId = restaurant?.restaurant_id || restaurant?.id;
+    if (!restaurantId) {
+      return;
+    }
+
+    const requestKey = String(restaurantId);
+    setPendingFavouriteRestaurantId(requestKey);
+    setFavouritesError("");
+    setFavouritesNotice("");
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const isFavourite = isRestaurantFavourite(restaurantId);
+      const response = await fetch(
+        `${API_BASE_URL}/favourites/restaurant/${restaurantId}/${cleanUsername}/${cleanToken}`,
+        {
+          method: isFavourite ? "DELETE" : "POST",
+        }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Favourite request failed with status ${response.status}`);
+      }
+
+      await refreshFavourites();
+      setFavouritesNotice(
+        isFavourite
+          ? `${restaurant.name} removed from favourites.`
+          : `${restaurant.name} added to favourites.`
+      );
+    } catch (err) {
+      console.error(err);
+      setFavouritesError("We couldn't update favourites right now.");
+    } finally {
+      setPendingFavouriteRestaurantId("");
+    }
+  }, [isRestaurantFavourite, refreshFavourites, token, username]);
 
   const comboItemsById = useMemo(() => {
     const itemMap = new Map();
@@ -807,6 +1217,138 @@ function App() {
 
   const backendStatusLabel = hasLoadedLiveData ? "Backend online" : "Backend offline";
   const profileInitial = (userProfile.username || username || "U").charAt(0).toUpperCase();
+  const normalizedRole = normalizeRole(userProfile.role);
+  const canManageCatalog = normalizedRole === "manager" || normalizedRole === "admin";
+  const canManageAllCatalog = normalizedRole === "admin";
+  const refreshManagementCatalog = useCallback(async () => {
+    const [restaurantsResponse, itemsResponse, combosResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/dataset/restaurants`),
+      fetch(`${API_BASE_URL}/dataset/items`),
+      fetch(`${API_BASE_URL}/cart/combos`),
+    ]);
+
+    if (!restaurantsResponse.ok) {
+      throw new Error(`Restaurants dataset failed with status ${restaurantsResponse.status}`);
+    }
+
+    if (!itemsResponse.ok) {
+      throw new Error(`Items dataset failed with status ${itemsResponse.status}`);
+    }
+
+    if (!combosResponse.ok) {
+      throw new Error(`Combos dataset failed with status ${combosResponse.status}`);
+    }
+
+    const [restaurantsPayload, itemsPayload, combosPayload] = await Promise.all([
+      restaurantsResponse.json(),
+      itemsResponse.json(),
+      combosResponse.json(),
+    ]);
+
+    const mappedRestaurants = Array.isArray(restaurantsPayload)
+      ? restaurantsPayload.map(mapRestaurant)
+      : [];
+    const mappedItems = Array.isArray(itemsPayload)
+      ? itemsPayload.map(mapMenuItem)
+      : [];
+    const mappedCombos = Array.isArray(combosPayload)
+      ? combosPayload.map(mapCombo)
+      : [];
+
+    setManagementRestaurants(mappedRestaurants);
+    setManagementItems(mappedItems);
+    setManagementCombos(mappedCombos);
+
+    return {
+      restaurants: mappedRestaurants,
+      items: mappedItems,
+      combos: mappedCombos,
+    };
+  }, []);
+
+  const manageableRestaurants = useMemo(() => {
+    if (canManageAllCatalog) {
+      return managementRestaurants;
+    }
+
+    return managementRestaurants.filter((restaurant) => normalizeRole(restaurant.owner) === normalizeRole(username));
+  }, [canManageAllCatalog, managementRestaurants, username]);
+
+  const selectedManagedRestaurant = useMemo(() => {
+    return managementRestaurants.find(
+      (restaurant) => String(restaurant.restaurant_id || restaurant.id) === String(managementRestaurantId)
+    ) || null;
+  }, [managementRestaurantId, managementRestaurants]);
+  const hasManagementContext = Boolean(managementRestaurantId) || isCreatingManagementRestaurant;
+  const managementSelectValue = isCreatingManagementRestaurant
+    ? CREATE_RESTAURANT_OPTION
+    : managementRestaurantId;
+  const currentManagementCombos = useMemo(() => {
+    const menuId = Number(managementRestaurantId || 0);
+    return managementCombos.filter((combo) => Number(combo.menu_id) === menuId);
+  }, [managementCombos, managementRestaurantId]);
+
+  const loadManagementRestaurantData = useCallback(async (restaurantId = managementRestaurantId) => {
+    if (!restaurantId || !username.trim() || !token.trim()) {
+      return;
+    }
+
+    const catalog = await refreshManagementCatalog();
+    const cleanUsername = encodeURIComponent(username.trim());
+    const cleanToken = encodeURIComponent(token.trim());
+    const restaurantResponse = await fetch(
+      `${API_BASE_URL}/dataset/restaurant/${restaurantId}/${cleanUsername}/${cleanToken}`
+    );
+
+    if (!restaurantResponse.ok) {
+      throw new Error(`Restaurant request failed with status ${restaurantResponse.status}`);
+    }
+
+    const restaurantPayload = await restaurantResponse.json();
+    setRestaurantForm({
+      restaurant_id: String(restaurantPayload.restaurant_id || restaurantId),
+      name: restaurantPayload.name || "",
+      cuisine: restaurantPayload.cuisine || "",
+      rating: String(restaurantPayload.rating ?? 0),
+      restaurantAddress: restaurantPayload.restaurantAddress || "",
+      owner: restaurantPayload.owner || "",
+    });
+
+    const scopedItems = catalog.items.filter((item) => Number(item.menuId) === Number(restaurantId));
+    const scopedCombos = catalog.combos.filter((combo) => Number(combo.menu_id) === Number(restaurantId));
+    const menuResponse = await fetch(`${API_BASE_URL}/dataset/menu/${restaurantId}`);
+    if (menuResponse.ok) {
+      setManagementMenuExists(true);
+      setMenuForm({
+        itemsText: serializeNumberList(scopedItems.map((item) => item.item_id)),
+        combosText: serializeComboConfig(scopedCombos),
+      });
+      setMenuItems(scopedItems);
+      setItemForm((current) => ({
+        ...current,
+        menu_id: String(restaurantId),
+      }));
+    } else if (scopedItems.length || scopedCombos.length) {
+      setManagementMenuExists(false);
+      setMenuForm({
+        itemsText: serializeNumberList(scopedItems.map((item) => item.item_id)),
+        combosText: serializeComboConfig(scopedCombos),
+      });
+      setMenuItems(scopedItems);
+      setItemForm((current) => ({
+        ...current,
+        menu_id: String(restaurantId),
+      }));
+    } else {
+      setManagementMenuExists(false);
+      setMenuForm({
+        itemsText: "",
+        combosText: "",
+      });
+      setMenuItems([]);
+      setItemForm(emptyItemForm(String(restaurantId)));
+    }
+  }, [managementRestaurantId, refreshManagementCatalog, token, username]);
 
   useEffect(() => {
     if (!hasLoadedLiveData) {
@@ -821,6 +1363,500 @@ function App() {
 
     return () => window.clearTimeout(timeoutId);
   }, [fetchRestaurants, hasLoadedLiveData, searchTerm, selectedCuisine]);
+
+  useEffect(() => {
+    if (!showManagementPanel || !managementRestaurantId || !username.trim() || !token.trim()) {
+      return;
+    }
+
+    const loadManagementRestaurant = async () => {
+      setIsManagementLoading(true);
+      setManagementError("");
+
+      try {
+        await loadManagementRestaurantData(managementRestaurantId);
+      } catch (err) {
+        console.error(err);
+        setManagementError("We couldn't load that restaurant into the management panel.");
+      } finally {
+        setIsManagementLoading(false);
+      }
+    };
+
+    loadManagementRestaurant();
+  }, [loadManagementRestaurantData, managementRestaurantId, showManagementPanel, token, username]);
+
+  const resetManagementForms = useCallback((nextRestaurantId = "") => {
+    setManagementMenuExists(false);
+    setRestaurantForm(emptyRestaurantForm());
+    setMenuForm({
+      ...emptyMenuForm(),
+    });
+    setItemForm(emptyItemForm(nextRestaurantId));
+    setComboForm(emptyComboForm());
+    setMenuItems([]);
+  }, []);
+
+  const persistManagementMenu = useCallback(async (nextMenuForm, successMessage) => {
+    const menuId = Number(managementRestaurantId);
+    if (!menuId) {
+      throw new Error("Select a restaurant first.");
+    }
+
+    const cleanUsername = encodeURIComponent(username.trim());
+    const cleanToken = encodeURIComponent(token.trim());
+    const payload = {
+      menu_id: menuId,
+      items: parseNumberList(nextMenuForm.itemsText),
+      menuCombos: parseComboConfig(nextMenuForm.combosText, menuId),
+    };
+
+    const method = managementMenuExists ? "PUT" : "POST";
+    const endpoint = method === "PUT"
+      ? `${API_BASE_URL}/dataset/menu/${menuId}/${cleanUsername}/${cleanToken}`
+      : `${API_BASE_URL}/dataset/menu/${cleanUsername}/${cleanToken}`;
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null);
+      throw new Error(failure?.detail || `Save menu failed with status ${response.status}`);
+    }
+
+    setManagementMenuExists(true);
+    setMenuForm(nextMenuForm);
+    setManagementNotice(successMessage);
+  }, [managementMenuExists, managementRestaurantId, token, username]);
+
+  const openManagementPanel = useCallback(() => {
+    setShowManagementPanel(true);
+    setShowAccountMenu(false);
+    setManagementError("");
+    setManagementNotice("");
+    refreshManagementCatalog().catch((err) => {
+      console.error(err);
+      setManagementError("We couldn't load the management datasets.");
+    });
+    if (!managementRestaurantId && !isCreatingManagementRestaurant) {
+      resetManagementForms("");
+    }
+  }, [isCreatingManagementRestaurant, managementRestaurantId, refreshManagementCatalog, resetManagementForms]);
+
+  const handleManagementRestaurantSelect = useCallback((event) => {
+    const nextId = event.target.value;
+
+    if (nextId === CREATE_RESTAURANT_OPTION) {
+      setManagementRestaurantId("");
+      setIsCreatingManagementRestaurant(true);
+      setManagementNotice("");
+      setManagementError("");
+      resetManagementForms("");
+      return;
+    }
+
+    setManagementRestaurantId(nextId);
+    setIsCreatingManagementRestaurant(false);
+    setManagementNotice("");
+    setManagementError("");
+
+    if (!nextId) {
+      resetManagementForms("");
+    }
+  }, [resetManagementForms]);
+
+  const handleStartCreateRestaurant = useCallback(() => {
+    setManagementRestaurantId("");
+    setIsCreatingManagementRestaurant(true);
+    setManagementNotice("");
+    setManagementError("");
+    resetManagementForms("");
+  }, [resetManagementForms]);
+
+  const handleCreateRestaurant = useCallback(async () => {
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const payload = {
+        restaurant_id: 0,
+        name: restaurantForm.name.trim(),
+        cuisine: restaurantForm.cuisine.trim(),
+        rating: Number(restaurantForm.rating || 0),
+        restaurantAddress: restaurantForm.restaurantAddress.trim(),
+        durationMinutes: 0,
+        distanceKM: 0,
+        owner: canManageAllCatalog ? (restaurantForm.owner.trim() || username.trim()) : username.trim(),
+      };
+
+      const response = await fetch(`${API_BASE_URL}/dataset/restaurant/${cleanUsername}/${cleanToken}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Create restaurant failed with status ${response.status}`);
+      }
+
+      await fetchRestaurants({
+        useFilters: Boolean(searchTerm.trim()) || selectedCuisine !== "All",
+      });
+      const catalog = await refreshManagementCatalog();
+      const match = catalog.restaurants.find((restaurant) => (
+        restaurant.name === payload.name
+        && restaurant.restaurantAddress === payload.restaurantAddress
+      ));
+
+      if (match) {
+        setManagementRestaurantId(String(match.restaurant_id || match.id));
+      }
+
+      setIsCreatingManagementRestaurant(false);
+      setManagementNotice("Restaurant created successfully.");
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't create the restaurant.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [canManageAllCatalog, fetchRestaurants, refreshManagementCatalog, restaurantForm, searchTerm, selectedCuisine, token, username]);
+
+  const handleCreateRestaurantAction = useCallback(() => {
+    if (isCreatingManagementRestaurant) {
+      handleCreateRestaurant();
+      return;
+    }
+
+    handleStartCreateRestaurant();
+  }, [handleCreateRestaurant, handleStartCreateRestaurant, isCreatingManagementRestaurant]);
+
+  const handleUpdateRestaurant = useCallback(async () => {
+    if (!managementRestaurantId) {
+      setManagementError("Select a restaurant to update first.");
+      return;
+    }
+
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const payload = {
+        restaurant_id: Number(managementRestaurantId),
+        name: restaurantForm.name.trim(),
+        cuisine: restaurantForm.cuisine.trim(),
+        rating: Number(restaurantForm.rating || 0),
+        restaurantAddress: restaurantForm.restaurantAddress.trim(),
+        durationMinutes: 0,
+        distanceKM: 0,
+        owner: restaurantForm.owner || selectedManagedRestaurant?.owner || "",
+      };
+
+      const response = await fetch(
+        `${API_BASE_URL}/dataset/restaurant/${managementRestaurantId}/${cleanUsername}/${cleanToken}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Update restaurant failed with status ${response.status}`);
+      }
+
+      await fetchRestaurants({
+        useFilters: Boolean(searchTerm.trim()) || selectedCuisine !== "All",
+      });
+      await loadManagementRestaurantData(managementRestaurantId);
+      setManagementNotice("Restaurant updated successfully.");
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't update the restaurant.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [fetchRestaurants, loadManagementRestaurantData, managementRestaurantId, restaurantForm, searchTerm, selectedCuisine, selectedManagedRestaurant, token, username]);
+
+  const handleDeleteRestaurant = useCallback(async () => {
+    if (!managementRestaurantId) {
+      setManagementError("Select a restaurant to remove first.");
+      return;
+    }
+
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+
+      for (const item of managementItems.filter((entry) => Number(entry.menuId) === Number(managementRestaurantId))) {
+        const itemResponse = await fetch(
+          `${API_BASE_URL}/dataset/item/${item.item_id}/${cleanUsername}/${cleanToken}`,
+          { method: "DELETE" }
+        );
+
+        if (!itemResponse.ok) {
+          const failure = await itemResponse.json().catch(() => null);
+          throw new Error(failure?.detail || `Delete item failed with status ${itemResponse.status}`);
+        }
+      }
+
+      await fetch(
+        `${API_BASE_URL}/dataset/menu/${managementRestaurantId}/${cleanUsername}/${cleanToken}`,
+        { method: "DELETE" }
+      ).catch(() => null);
+
+      const response = await fetch(
+        `${API_BASE_URL}/dataset/restaurant/${managementRestaurantId}/${cleanUsername}/${cleanToken}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Delete restaurant failed with status ${response.status}`);
+      }
+
+      await fetchRestaurants({
+        useFilters: Boolean(searchTerm.trim()) || selectedCuisine !== "All",
+      });
+      await refreshManagementCatalog();
+      setManagementRestaurantId("");
+      setIsCreatingManagementRestaurant(false);
+      resetManagementForms("");
+      setManagementNotice("Restaurant removed successfully.");
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't remove the restaurant.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [fetchRestaurants, managementItems, managementRestaurantId, refreshManagementCatalog, resetManagementForms, searchTerm, selectedCuisine, token, username]);
+
+  const handleSaveItem = useCallback(async () => {
+    const menuId = Number(managementRestaurantId);
+    const requestedItemId = Number(itemForm.item_id || 0);
+    const itemId = requestedItemId > 0 ? requestedItemId : 0;
+    if (!menuId || !itemForm.name.trim() || !itemForm.price) {
+      setManagementError("Item name, price, and a selected restaurant are required.");
+      return;
+    }
+
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const existingItem = itemId > 0
+        ? menuItems.find((item) => String(item.item_id) === String(itemId))
+        : null;
+      const payload = {
+        item_id: itemId,
+        name: itemForm.name.trim(),
+        price: String(itemForm.price).trim(),
+        menu_id: menuId,
+      };
+
+      const method = existingItem ? "PUT" : "POST";
+      const endpoint = existingItem
+        ? `${API_BASE_URL}/dataset/item/${itemId}/${cleanUsername}/${cleanToken}`
+        : `${API_BASE_URL}/dataset/item/${cleanUsername}/${cleanToken}`;
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Save item failed with status ${response.status}`);
+      }
+
+      const catalog = await refreshManagementCatalog();
+      const scopedItems = catalog.items.filter((item) => Number(item.menuId) === menuId);
+      const nextMenuForm = {
+        ...menuForm,
+        itemsText: serializeNumberList(scopedItems.map((item) => item.item_id)),
+      };
+      await persistManagementMenu(
+        nextMenuForm,
+        existingItem ? "Item updated successfully." : "Item created successfully."
+      );
+      await loadManagementRestaurantData(menuId);
+      setItemForm(emptyItemForm(String(menuId)));
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't save the item.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [itemForm, loadManagementRestaurantData, managementRestaurantId, menuForm, menuItems, persistManagementMenu, refreshManagementCatalog, token, username]);
+
+  const handleDeleteItem = useCallback(async (itemId) => {
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const response = await fetch(
+        `${API_BASE_URL}/dataset/item/${itemId}/${cleanUsername}/${cleanToken}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Delete item failed with status ${response.status}`);
+      }
+
+      const catalog = await refreshManagementCatalog();
+      const scopedItems = catalog.items.filter((item) => Number(item.menuId) === Number(managementRestaurantId));
+      const nextMenuForm = {
+        ...menuForm,
+        itemsText: serializeNumberList(scopedItems.map((item) => item.item_id)),
+      };
+      await persistManagementMenu(nextMenuForm, "Item removed successfully.");
+      await loadManagementRestaurantData(managementRestaurantId);
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't remove the item.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [loadManagementRestaurantData, managementRestaurantId, menuForm, persistManagementMenu, refreshManagementCatalog, token, username]);
+
+  const populateItemForm = useCallback((item) => {
+    setItemForm({
+      item_id: String(item.item_id || item.id),
+      name: item.name || "",
+      price: String(item.price ?? ""),
+      menu_id: String(managementRestaurantId),
+    });
+    setManagementNotice("");
+    setManagementError("");
+  }, [managementRestaurantId]);
+
+  const handleSaveCombo = useCallback(async () => {
+    const menuId = Number(managementRestaurantId);
+    if (!menuId) {
+      setManagementError("Select a restaurant first.");
+      return;
+    }
+
+    if (!comboForm.comboItemsText.trim()) {
+      setManagementError("Enter the combo item IDs.");
+      return;
+    }
+
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const currentCombos = parseComboConfig(menuForm.combosText, menuId);
+      const requestedComboId = Number(comboForm.combo_id || 0);
+      const existingComboIndex = requestedComboId > 0
+        ? currentCombos.findIndex((combo) => combo.combo_id === requestedComboId)
+        : -1;
+      const nextComboId = existingComboIndex >= 0
+        ? requestedComboId
+        : managementCombos.reduce((maxId, combo) => Math.max(maxId, Number(combo.combo_id || 0)), 0) + 1;
+
+      const nextCombo = {
+        combo_id: nextComboId,
+        comboItems: parseNumberList(comboForm.comboItemsText),
+        discountPrice: Number(comboForm.discountPrice || 0),
+        menu_id: menuId,
+      };
+
+      const nextCombos = existingComboIndex >= 0
+        ? currentCombos.map((combo, index) => (index === existingComboIndex ? nextCombo : combo))
+        : [...currentCombos, nextCombo];
+
+      const nextMenuForm = {
+        ...menuForm,
+        combosText: serializeComboConfig(nextCombos),
+      };
+
+      await persistManagementMenu(
+        nextMenuForm,
+        existingComboIndex >= 0 ? "Combo updated successfully." : "Combo created successfully."
+      );
+      await loadManagementRestaurantData(menuId);
+      setComboForm(emptyComboForm());
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't save the combo.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [comboForm, loadManagementRestaurantData, managementCombos, managementRestaurantId, menuForm, persistManagementMenu]);
+
+  const handleDeleteCombo = useCallback(async (comboId) => {
+    const menuId = Number(managementRestaurantId);
+    if (!menuId) {
+      setManagementError("Select a restaurant first.");
+      return;
+    }
+
+    setManagementError("");
+    setManagementNotice("");
+    setIsManagementLoading(true);
+
+    try {
+      const currentCombos = parseComboConfig(menuForm.combosText, menuId);
+      const nextCombos = currentCombos.filter((combo) => Number(combo.combo_id) !== Number(comboId));
+      const nextMenuForm = {
+        ...menuForm,
+        combosText: serializeComboConfig(nextCombos),
+      };
+      await persistManagementMenu(nextMenuForm, "Combo removed successfully.");
+      await loadManagementRestaurantData(menuId);
+      setComboForm((current) => (
+        Number(current.combo_id) === Number(comboId) ? emptyComboForm() : current
+      ));
+    } catch (err) {
+      console.error(err);
+      setManagementError(err.message || "We couldn't remove the combo.");
+    } finally {
+      setIsManagementLoading(false);
+    }
+  }, [loadManagementRestaurantData, managementRestaurantId, menuForm, persistManagementMenu]);
+
+  const populateComboForm = useCallback((combo) => {
+    setComboForm({
+      combo_id: String(combo.combo_id || 0),
+      comboItemsText: serializeNumberList(combo.comboItems),
+      discountPrice: String(combo.discountPrice ?? 0),
+    });
+    setManagementNotice("");
+    setManagementError("");
+  }, []);
 
   return (
     <div className="app-shell">
@@ -840,6 +1876,7 @@ function App() {
                 onClick={() => {
                   setAuthMode("login");
                   setError("");
+                  setAuthNotice("");
                 }}
               >
                 Login
@@ -850,6 +1887,7 @@ function App() {
                 onClick={() => {
                   setAuthMode("register");
                   setError("");
+                  setAuthNotice("");
                 }}
               >
                 Create user
@@ -949,6 +1987,7 @@ function App() {
                   ? "We’ll log in first, then fetch your restaurants."
                   : "We’ll create your user, return a token, and then fetch your restaurants."}
               </p>
+              {authNotice ? <p className="auth-success">{authNotice}</p> : null}
               {error ? <p>{error}</p> : null}
             </div>
           </div>
@@ -971,6 +2010,16 @@ function App() {
           ) : null}
           {hasLoadedLiveData ? (
             <div className="header-actions">
+              {canManageCatalog ? (
+                <button className="header-pill header-pill-admin" onClick={openManagementPanel} type="button">
+                  <span>{canManageAllCatalog ? "Admin" : "Manager"}</span>
+                  <strong>Manage</strong>
+                </button>
+              ) : null}
+              <button className="header-pill" onClick={openFavouritesPanel} type="button">
+                <span>Favorites</span>
+                <strong>{favouriteRestaurants.length}</strong>
+              </button>
               <button className="header-pill" onClick={() => setShowCart(true)} type="button">
                 <span>Cart</span>
                 <strong>{totalCartItems}</strong>
@@ -1003,10 +2052,6 @@ function App() {
                       <p>
                         <span>Address</span>
                         <strong>{userProfile.address || "Unavailable"}</strong>
-                      </p>
-                      <p>
-                        <span>Backend</span>
-                        <strong>{backendStatusLabel}</strong>
                       </p>
                     </div>
                     <button className="account-menu-item" onClick={handleChangeAccount} type="button">
@@ -1157,18 +2202,269 @@ function App() {
           </section>
         ) : null}
 
-        <section className="data-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">API preview</p>
-              <h3>Current response payload</h3>
+        {showManagementPanel ? (
+          <section className="detail-overlay" onClick={() => setShowManagementPanel(false)}>
+            <div
+              className="cart-panel management-panel"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="detail-header">
+                <div>
+                  <p className="eyebrow">{canManageAllCatalog ? "Admin tools" : "Manager tools"}</p>
+                  <h3>{canManageAllCatalog ? "Manage all catalog data" : "Manage your catalog data"}</h3>
+                  <p className="section-copy">
+                    {canManageAllCatalog
+                      ? "Create, edit, and remove any restaurant, menu, or item."
+                      : "Create restaurants and manage the restaurants owned by your username."}
+                  </p>
+                </div>
+                <div className="cart-header-actions">
+                  <button className="ghost-action" onClick={() => setShowManagementPanel(false)} type="button">
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              {managementError ? <div className="detail-state"><p>{managementError}</p></div> : null}
+              {managementNotice ? <div className="detail-state cart-state-success"><p>{managementNotice}</p></div> : null}
+
+              <div className="management-grid">
+                <div className="detail-section">
+                  <div className="detail-section-header">
+                    <h4>Restaurant controls</h4>
+                    <span>{manageableRestaurants.length} available</span>
+                  </div>
+
+                  <label className="management-label">
+                    Select editable restaurant
+                    <select
+                      className="auth-select"
+                      value={managementSelectValue}
+                      onChange={handleManagementRestaurantSelect}
+                    >
+                      <option value="">Select a restaurant</option>
+                      <option value={CREATE_RESTAURANT_OPTION}>Create new restaurant</option>
+                      {manageableRestaurants.map((restaurant) => (
+                        <option
+                          key={restaurant.restaurant_id || restaurant.id}
+                          value={restaurant.restaurant_id || restaurant.id}
+                        >
+                          {restaurant.name} ({restaurant.owner || "no owner"})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="management-form">
+                    <label className="management-label">
+                      Name
+                      <input
+                        type="text"
+                        value={restaurantForm.name}
+                        onChange={(event) => setRestaurantForm((current) => ({ ...current, name: event.target.value }))}
+                      />
+                    </label>
+                    <label className="management-label">
+                      Cuisine
+                      <input
+                        type="text"
+                        value={restaurantForm.cuisine}
+                        onChange={(event) => setRestaurantForm((current) => ({ ...current, cuisine: event.target.value }))}
+                      />
+                    </label>
+                    <label className="management-label">
+                      Rating
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={restaurantForm.rating}
+                        onChange={(event) => setRestaurantForm((current) => ({ ...current, rating: event.target.value }))}
+                      />
+                    </label>
+                    <label className="management-label">
+                      Address
+                      <input
+                        type="text"
+                        value={restaurantForm.restaurantAddress}
+                        onChange={(event) => setRestaurantForm((current) => ({ ...current, restaurantAddress: event.target.value }))}
+                      />
+                    </label>
+                    <label className="management-label">
+                      Owner
+                      <input
+                        type="text"
+                        value={restaurantForm.owner || username}
+                        onChange={(event) => setRestaurantForm((current) => ({ ...current, owner: event.target.value }))}
+                        disabled={!canManageAllCatalog}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="management-actions">
+                    <button className="inline-action" onClick={handleCreateRestaurantAction} type="button" disabled={isManagementLoading}>
+                      Create restaurant
+                    </button>
+                    <button className="inline-action" onClick={handleUpdateRestaurant} type="button" disabled={!managementRestaurantId || isManagementLoading}>
+                      Save restaurant
+                    </button>
+                    <button className="inline-action inline-action-muted" onClick={handleDeleteRestaurant} type="button" disabled={!managementRestaurantId || isManagementLoading}>
+                      Remove restaurant
+                    </button>
+                  </div>
+                </div>
+
+                {hasManagementContext ? (
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Combo controls</h4>
+                      <span>{managementRestaurantId ? `Restaurant ${managementRestaurantId}` : "New restaurant"}</span>
+                    </div>
+                    {!managementRestaurantId ? (
+                      <p className="detail-empty">Create the restaurant first, then add combos to it.</p>
+                    ) : (
+                      <>
+                        <div className="management-form">
+                          <p className="management-helper">
+                            New combos automatically get the next available combo ID.
+                          </p>
+                          <label className="management-label">
+                            Combo item IDs
+                            <textarea
+                              rows="4"
+                              value={comboForm.comboItemsText}
+                              onChange={(event) => setComboForm((current) => ({ ...current, comboItemsText: event.target.value }))}
+                              placeholder="1, 2, 3"
+                            />
+                          </label>
+                          <label className="management-label">
+                            Discount price
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={comboForm.discountPrice}
+                              onChange={(event) => setComboForm((current) => ({ ...current, discountPrice: event.target.value }))}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="management-actions">
+                          <button className="inline-action" onClick={handleSaveCombo} type="button" disabled={isManagementLoading}>
+                            Save combo
+                          </button>
+                        </div>
+
+                        {currentManagementCombos.length ? (
+                          <div className="combo-list management-sublist">
+                            {currentManagementCombos.map((combo) => (
+                              <article className="combo-card" key={`manage-combo-${combo.combo_id}`}>
+                                <div className="combo-topline">
+                                  <h5>Combo #{combo.combo_id}</h5>
+                                  <div className="menu-actions">
+                                    <strong>${Number(combo.discountPrice || 0).toFixed(2)} off</strong>
+                                    <button className="inline-action" onClick={() => populateComboForm(combo)} type="button">
+                                      Edit
+                                    </button>
+                                    <button className="inline-action inline-action-muted" onClick={() => handleDeleteCombo(combo.combo_id)} type="button">
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                                <p>Includes item IDs: {combo.comboItems.join(", ")}</p>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="detail-empty">No combos for this restaurant yet.</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              {hasManagementContext ? (
+                <div className="management-grid management-grid-secondary">
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Item controls</h4>
+                      <span>{managementRestaurantId ? `${menuItems.length} loaded` : "New restaurant"}</span>
+                    </div>
+
+                    {!managementRestaurantId ? (
+                      <p className="detail-empty">Create the restaurant first, then add items to it.</p>
+                    ) : (
+                      <>
+                        <div className="management-form">
+                          <label className="management-label">
+                            Name
+                            <input
+                              type="text"
+                              value={itemForm.name}
+                              onChange={(event) => setItemForm((current) => ({ ...current, name: event.target.value }))}
+                            />
+                          </label>
+                          <label className="management-label">
+                            Price
+                            <input
+                              type="text"
+                              value={itemForm.price}
+                              onChange={(event) => setItemForm((current) => ({ ...current, price: event.target.value }))}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="management-actions">
+                          <button className="inline-action" onClick={handleSaveItem} type="button" disabled={isManagementLoading}>
+                            Save item
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Current items</h4>
+                      <span>{isManagementLoading ? "Loading..." : "Ready"}</span>
+                    </div>
+                    {managementRestaurantId && menuItems.length ? (
+                      <div className="menu-list">
+                        {menuItems.map((item) => (
+                          <article className="menu-card" key={item.item_id || item.id}>
+                            <div>
+                              <h5>{item.name}</h5>
+                              <p>Item ID: {item.item_id || item.id} · Menu ID: {item.menuId}</p>
+                            </div>
+                            <div className="menu-actions">
+                              <strong>${Number(item.price || 0).toFixed(2)}</strong>
+                              <button className="inline-action" onClick={() => populateItemForm(item)} type="button">
+                                Edit
+                              </button>
+                              <button className="inline-action inline-action-muted" onClick={() => handleDeleteItem(item.item_id || item.id)} type="button">
+                                Remove
+                              </button>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="detail-empty">
+                        {managementRestaurantId
+                          ? "No items for this restaurant yet."
+                          : "Select an eligible restaurant or start creating a new one to access item controls."}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <p className="section-copy">
-              This stays visible so you can still inspect what the backend is returning.
-            </p>
-          </div>
-          <pre>{JSON.stringify(data, null, 2) || "No live payload loaded yet."}</pre>
-        </section>
+          </section>
+        ) : null}
 
         {selectedRestaurant ? (
           <section className="detail-overlay" onClick={handleCloseRestaurant}>
@@ -1186,9 +2482,26 @@ function App() {
                     {selectedRestaurant.cuisine} · {selectedRestaurant.restaurantAddress || "Address unavailable"}
                   </p>
                 </div>
-                <button className="ghost-action" onClick={handleCloseRestaurant} type="button">
-                  Close
-                </button>
+                <div className="cart-header-actions">
+                  <button
+                    className={isRestaurantFavourite(selectedRestaurant.restaurant_id || selectedRestaurant.id) ? "star-action active" : "star-action"}
+                    onClick={() => handleToggleFavouriteRestaurant(selectedRestaurant)}
+                    type="button"
+                    aria-label={
+                      isRestaurantFavourite(selectedRestaurant.restaurant_id || selectedRestaurant.id)
+                        ? "Remove restaurant from favourites"
+                        : "Add restaurant to favourites"
+                    }
+                    disabled={pendingFavouriteRestaurantId === String(selectedRestaurant.restaurant_id || selectedRestaurant.id)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2.8l2.84 5.76 6.36.92-4.6 4.48 1.08 6.33L12 17.3l-5.68 2.99 1.08-6.33-4.6-4.48 6.36-.92L12 2.8z" />
+                    </svg>
+                  </button>
+                  <button className="ghost-action" onClick={handleCloseRestaurant} type="button">
+                    Close
+                  </button>
+                </div>
               </div>
 
               {isMenuLoading ? (
@@ -1280,6 +2593,14 @@ function App() {
                   <p>{cart.restaurant || selectedRestaurant.name}</p>
                   <p>{cart.items?.length || 0} item lines</p>
                   <p>${Number(cart.checkout_total || 0).toFixed(2)} total</p>
+                  <button
+                    type="button"
+                    className="inline-action"
+                    onClick={openCheckoutPanel}
+                    disabled={!cart?.items?.length}
+                  >
+                    Checkout
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -1407,8 +2728,329 @@ function App() {
                     <p>Total</p>
                     <strong>${Number(cart?.checkout_total || 0).toFixed(2)}</strong>
                   </div>
+                  <div className="management-actions">
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={openCheckoutPanel}
+                      disabled={!cartDisplayEntries.length}
+                    >
+                      Checkout
+                    </button>
+                  </div>
                 </div>
               </div>
+            </div>
+          </section>
+        ) : null}
+
+        {showFavourites ? (
+          <section className="detail-overlay" onClick={() => setShowFavourites(false)}>
+            <div
+              className="cart-panel"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="detail-header">
+                <div>
+                  <p className="eyebrow">Favorites</p>
+                  <h3>Your favourite restaurants</h3>
+                  <p className="section-copy">
+                    Quick access to the restaurants you&apos;ve starred.
+                  </p>
+                </div>
+                <div className="cart-header-actions">
+                  <button className="ghost-action" onClick={() => setShowFavourites(false)} type="button">
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              {favouritesError ? <div className="detail-state"><p>{favouritesError}</p></div> : null}
+              {favouritesNotice ? <div className="detail-state cart-state-success"><p>{favouritesNotice}</p></div> : null}
+
+              <div className="detail-section">
+                <div className="detail-section-header">
+                  <h4>Saved restaurants</h4>
+                  <span>{favouriteRestaurants.length} saved</span>
+                </div>
+                {isFavouritesLoading ? (
+                  <p className="detail-empty">Loading favourites...</p>
+                ) : favouriteRestaurants.length ? (
+                  <div className="menu-list">
+                    {favouriteRestaurants.map((restaurant) => (
+                      <article className="menu-card favourite-card" key={restaurant.restaurant_id || restaurant.id}>
+                        <div>
+                          <h5>{restaurant.name}</h5>
+                          <p>{restaurant.cuisine} · {restaurant.restaurantAddress || "Address unavailable"}</p>
+                        </div>
+                        <div className="menu-actions">
+                          <button
+                            type="button"
+                            className="inline-action"
+                            onClick={() => {
+                              setShowFavourites(false);
+                              handleRestaurantSelect(restaurant);
+                            }}
+                          >
+                            Open
+                          </button>
+                          <button
+                            type="button"
+                            className="star-action active"
+                            onClick={() => handleToggleFavouriteRestaurant(restaurant)}
+                            aria-label="Remove restaurant from favourites"
+                            disabled={pendingFavouriteRestaurantId === String(restaurant.restaurant_id || restaurant.id)}
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M12 2.8l2.84 5.76 6.36.92-4.6 4.48 1.08 6.33L12 17.3l-5.68 2.99 1.08-6.33-4.6-4.48 6.36-.92L12 2.8z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="detail-empty">No favourite restaurants yet. Tap the star on a restaurant to save it here.</p>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {showCheckout ? (
+          <section className="detail-overlay" onClick={handleCloseCheckout}>
+            <div
+              className="cart-panel checkout-panel"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="detail-header">
+                <div>
+                  <p className="eyebrow">Checkout</p>
+                  <h3>{checkoutResult ? "Order confirmed" : (cart?.restaurant || "Complete your order")}</h3>
+                  <p className="section-copy">
+                    Use a saved card or enter a new one. This flow uses the backend checkout and delivery APIs.
+                  </p>
+                </div>
+                <div className="cart-header-actions">
+                  <button className="ghost-action" onClick={handleCloseCheckout} type="button">
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              {checkoutError ? <div className="detail-state"><p>{checkoutError}</p></div> : null}
+              {checkoutNotice ? <div className="detail-state cart-state-success"><p>{checkoutNotice}</p></div> : null}
+
+              {checkoutResult ? (
+                <div className="cart-modal-grid">
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Payment result</h4>
+                      <span>{checkoutResult.status}</span>
+                    </div>
+                    <div className="checkout-summary-grid">
+                      <p>Transaction</p>
+                      <strong>{checkoutResult.transaction_id || "Unavailable"}</strong>
+                      <p>Order ID</p>
+                      <strong>{checkoutResult.order_id || "Unavailable"}</strong>
+                      <p>Subtotal</p>
+                      <strong>${Number(checkoutResult.subtotal || 0).toFixed(2)}</strong>
+                      <p>Tax</p>
+                      <strong>${Number(checkoutResult.tax || 0).toFixed(2)}</strong>
+                      <p>Delivery fee</p>
+                      <strong>${Number(checkoutResult.delivery_fee || 0).toFixed(2)}</strong>
+                      <p>Final total</p>
+                      <strong>${Number(checkoutResult.amount || 0).toFixed(2)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Delivery</h4>
+                      <span>{checkoutOrderSummary?.status_label || "Starting"}</span>
+                    </div>
+                    {checkoutOrderSummary ? (
+                      <div className="checkout-summary-grid">
+                        <p>Restaurant</p>
+                        <strong>{checkoutOrderSummary.restaurant}</strong>
+                        <p>Status</p>
+                        <strong>{checkoutOrderSummary.status_label}</strong>
+                        <p>ETA</p>
+                        <strong>{checkoutOrderSummary.estimated_delivery || "On the way"}</strong>
+                        <p>Total</p>
+                        <strong>${Number(checkoutOrderSummary.total || 0).toFixed(2)}</strong>
+                      </div>
+                    ) : (
+                      <p className="detail-empty">The order was created, but the delivery summary is still loading.</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="cart-modal-grid">
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Payment</h4>
+                      <span>{savedPaymentMethods.length} saved</span>
+                    </div>
+
+                    <div className="checkout-toggle-row">
+                      <button
+                        type="button"
+                        className={checkoutMethodMode === "saved" ? "chip active" : "chip"}
+                        onClick={() => setCheckoutMethodMode("saved")}
+                        disabled={!savedPaymentMethods.length}
+                      >
+                        Saved card
+                      </button>
+                      <button
+                        type="button"
+                        className={checkoutMethodMode === "new" ? "chip active" : "chip"}
+                        onClick={() => setCheckoutMethodMode("new")}
+                      >
+                        New card
+                      </button>
+                    </div>
+
+                    {isCheckoutLoading ? (
+                      <p className="detail-empty">Loading payment options...</p>
+                    ) : null}
+
+                    {!isCheckoutLoading && checkoutMethodMode === "saved" ? (
+                      savedPaymentMethods.length ? (
+                        <div className="saved-method-list">
+                          {savedPaymentMethods.map((method) => (
+                            <label className="saved-method-card" key={method.method_id}>
+                              <input
+                                type="radio"
+                                name="saved-payment-method"
+                                value={method.method_id}
+                                checked={selectedPaymentMethodId === method.method_id}
+                                onChange={(event) => setSelectedPaymentMethodId(event.target.value)}
+                              />
+                              <div>
+                                <strong>
+                                  {method.card_holder_name} · {method.card_type}
+                                </strong>
+                                <p>
+                                  Ending in {method.last_four} · {String(method.expiry_month).padStart(2, "0")}/{method.expiry_year}
+                                  {method.is_default ? " · Default" : ""}
+                                </p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="detail-empty">No saved cards yet. Switch to new card to enter one.</p>
+                      )
+                    ) : null}
+
+                    {!isCheckoutLoading && checkoutMethodMode === "new" ? (
+                      <div className="management-form">
+                        <label className="management-label">
+                          Card holder name
+                          <input
+                            type="text"
+                            value={paymentForm.card_holder_name}
+                            onChange={(event) => setPaymentForm((current) => ({ ...current, card_holder_name: event.target.value }))}
+                          />
+                        </label>
+                        <label className="management-label">
+                          Card number
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={paymentForm.card_number}
+                            onChange={(event) => setPaymentForm((current) => ({ ...current, card_number: event.target.value }))}
+                          />
+                        </label>
+                        <div className="checkout-inline-grid">
+                          <label className="management-label">
+                            Expiry month
+                            <input
+                              type="number"
+                              min="1"
+                              max="12"
+                              value={paymentForm.expiry_month}
+                              onChange={(event) => setPaymentForm((current) => ({ ...current, expiry_month: event.target.value }))}
+                            />
+                          </label>
+                          <label className="management-label">
+                            Expiry year
+                            <input
+                              type="number"
+                              min="2024"
+                              value={paymentForm.expiry_year}
+                              onChange={(event) => setPaymentForm((current) => ({ ...current, expiry_year: event.target.value }))}
+                            />
+                          </label>
+                          <label className="management-label">
+                            CVV
+                            <input
+                              type="password"
+                              inputMode="numeric"
+                              value={paymentForm.cvv}
+                              onChange={(event) => setPaymentForm((current) => ({ ...current, cvv: event.target.value }))}
+                            />
+                          </label>
+                        </div>
+                        <label className="management-label">
+                          Card type
+                          <select
+                            className="auth-select"
+                            value={paymentForm.card_type}
+                            onChange={(event) => setPaymentForm((current) => ({ ...current, card_type: event.target.value }))}
+                          >
+                            <option value="credit">Credit</option>
+                            <option value="debit">Debit</option>
+                          </select>
+                        </label>
+                        <label className="checkout-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={savePaymentMethod}
+                            onChange={(event) => setSavePaymentMethod(event.target.checked)}
+                          />
+                          <span>Save this card to my account</span>
+                        </label>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Order summary</h4>
+                      <span>{userProfile.address || "No saved address"}</span>
+                    </div>
+                    <div className="checkout-summary-grid">
+                      <p>Restaurant</p>
+                      <strong>{cart?.restaurant || selectedRestaurant?.name || "Current cart"}</strong>
+                      <p>Subtotal</p>
+                      <strong>${Number(cart?.subtotal || 0).toFixed(2)}</strong>
+                      <p>Discount</p>
+                      <strong>${Number(cart?.totalDiscount || 0).toFixed(2)}</strong>
+                      <p>Cart total</p>
+                      <strong>${Number(cart?.checkout_total || 0).toFixed(2)}</strong>
+                    </div>
+                    <p className="management-helper">
+                      Delivery fee and tax are calculated by the backend during checkout using your saved account address.
+                    </p>
+                    <div className="management-actions">
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={handleCheckoutSubmit}
+                        disabled={isCheckoutLoading || !cart?.items?.length}
+                      >
+                        {isCheckoutLoading ? "Processing..." : "Place order"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         ) : null}
