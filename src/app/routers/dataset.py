@@ -36,6 +36,10 @@ def post_resturant(restaurant: Resturant, username: str):
     except ValueError as error:
         raise HTTPException(status_code=500, detail=str(error))
 
+@router.get("/restaurants")
+def get_restaurants():
+    return resturant_storage.read_all()
+
 @router.get("/restaurant/{restaurant_id}/{username}/{token}", response_model=Resturant, dependencies=[Depends(require_auth)])
 def get_resturant(restaurant_id: int, username: str):
     try:
@@ -71,7 +75,11 @@ def post_menu(menu: Menu, username: str):
 
     c = menu_storage.new_menu(menu)
     return c
-    
+
+@router.get("/menus")
+def get_meus():
+    return menu_storage._load()
+
 @router.get("/menu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
     try:
@@ -112,6 +120,9 @@ def post_item(item: Item, username: str):
     except ValueError as error:
         raise HTTPException(status_code=500, detail=str(error))
 
+@router.get("/items")
+def get_items():
+    return item_storage.read_all()
 
 @router.get("/item/{item_id}/{username}/{token}", response_model=Item, dependencies=[Depends(require_auth)])
 def get_item(item_id: int):

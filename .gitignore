@@ -39,3 +39,7 @@ htmlcov/
 # Misc
 .DS_Store
 *.log
+
+# Frontend
+node_modules/
+frontend/node_modules/

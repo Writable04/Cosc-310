@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from app.routers.dependencies import cart_storage, require_auth
+from app.routers.dependencies import cart_storage, require_auth, menu_storage
 from app.schemas.cartSchema import Cart
 from app.schemas.itemSchema import Item
 
@@ -44,6 +44,13 @@ def remove_item(username: str, item_id: int):
     return result
 
 # combos
+@router.get("/combos")
+def get_combos():
+    all_combos = []
+    for menu in menu_storage.get_all_menus():
+        all_combos.extend(menu.menuCombos)
+    return all_combos
+
 @router.post("/combo/{username}/{combo_id}/{token}", dependencies=[Depends(require_auth)], response_model=Cart)
 def add_combo(username: str, combo_id: int, menu_id: int = Query(...)) -> Cart:
     result = cart_storage.addCombo(username, combo_id, menu_id)
