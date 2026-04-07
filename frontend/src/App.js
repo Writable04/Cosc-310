@@ -292,6 +292,14 @@ function emptyPaymentForm() {
   };
 }
 
+function emptyNotificationForm() {
+  return {
+    customer_username: "",
+    subject: "",
+    msg: "",
+  };
+}
+
 function App() {
   const [username, setUsername] = useState("");
   const [token, setToken] = useState("");
@@ -365,6 +373,10 @@ function App() {
   const [menuForm, setMenuForm] = useState(emptyMenuForm);
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [comboForm, setComboForm] = useState(emptyComboForm);
+  const [notificationForm, setNotificationForm] = useState(emptyNotificationForm);
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
+  const [notificationNotice, setNotificationNotice] = useState("");
+  const [notificationError, setNotificationError] = useState("");
 
   const fetchedRestaurants = useMemo(
     () => normalizeRestaurants(data).map(mapRestaurant),
@@ -1599,6 +1611,8 @@ function App() {
     setShowAccountMenu(false);
     setManagementError("");
     setManagementNotice("");
+    setNotificationNotice("");
+    setNotificationError("");
     refreshManagementCatalog().catch((err) => {
       console.error(err);
       setManagementError("We couldn't load the management datasets.");
@@ -1607,6 +1621,58 @@ function App() {
       resetManagementForms("");
     }
   }, [isCreatingManagementRestaurant, managementRestaurantId, refreshManagementCatalog, resetManagementForms]);
+
+  const handleSendNotification = useCallback(async () => {
+    if (!username.trim() || !token.trim()) {
+      return;
+    }
+
+    if (!canManageAllCatalog) {
+      setNotificationError("Only admins can send notifications.");
+      return;
+    }
+
+    const customerUsername = notificationForm.customer_username.trim();
+    const subject = notificationForm.subject.trim();
+    const msg = notificationForm.msg.trim();
+
+    if (!customerUsername || !subject || !msg) {
+      setNotificationError("Enter a target username, subject, and message.");
+      return;
+    }
+
+    setIsSendingNotification(true);
+    setNotificationError("");
+    setNotificationNotice("");
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const cleanToken = encodeURIComponent(token.trim());
+      const params = new URLSearchParams({
+        customer_username: customerUsername,
+        subject,
+        msg,
+      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/notification/send/${cleanUsername}/${cleanToken}?${params.toString()}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Notification request failed with status ${response.status}`);
+      }
+
+      setNotificationNotice(`Notification sent to ${customerUsername}.`);
+      setNotificationForm(emptyNotificationForm());
+    } catch (err) {
+      console.error(err);
+      setNotificationError(err.message || "We couldn't send that notification.");
+    } finally {
+      setIsSendingNotification(false);
+    }
+  }, [canManageAllCatalog, notificationForm, token, username]);
 
   const handleManagementRestaurantSelect = useCallback((event) => {
     const nextId = event.target.value;
@@ -2484,6 +2550,71 @@ function App() {
                     </button>
                   </div>
                 </div>
+
+                {canManageAllCatalog ? (
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Notifications</h4>
+                      <span>{isSendingNotification ? "Sending..." : "Admin only"}</span>
+                    </div>
+                    <p className="detail-empty" style={{ marginBottom: "1rem" }}>
+                      Send an email notification to a registered user.
+                    </p>
+                    <div className="management-form">
+                      <label className="management-label">
+                        Target username
+                        <input
+                          type="text"
+                          value={notificationForm.customer_username}
+                          onChange={(event) => setNotificationForm((current) => ({
+                            ...current,
+                            customer_username: event.target.value,
+                          }))}
+                          placeholder="e.g. alice"
+                          disabled={isSendingNotification}
+                        />
+                      </label>
+                      <label className="management-label">
+                        Subject
+                        <input
+                          type="text"
+                          value={notificationForm.subject}
+                          onChange={(event) => setNotificationForm((current) => ({
+                            ...current,
+                            subject: event.target.value,
+                          }))}
+                          placeholder="Delivery update"
+                          disabled={isSendingNotification}
+                        />
+                      </label>
+                      <label className="management-label">
+                        Message
+                        <textarea
+                          rows="5"
+                          value={notificationForm.msg}
+                          onChange={(event) => setNotificationForm((current) => ({
+                            ...current,
+                            msg: event.target.value,
+                          }))}
+                          placeholder="Write the message to email to the user..."
+                          disabled={isSendingNotification}
+                        />
+                      </label>
+                    </div>
+                    <div className="management-actions">
+                      <button
+                        className="inline-action"
+                        onClick={handleSendNotification}
+                        type="button"
+                        disabled={isSendingNotification}
+                      >
+                        {isSendingNotification ? "Sending..." : "Send notification"}
+                      </button>
+                    </div>
+                    {notificationError ? <p className="detail-empty" style={{ color: "#b42318" }}>{notificationError}</p> : null}
+                    {notificationNotice ? <p className="detail-empty" style={{ color: "#027a48" }}>{notificationNotice}</p> : null}
+                  </div>
+                ) : null}
 
                 {hasManagementContext ? (
                   <div className="detail-section">
