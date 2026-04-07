@@ -1,0 +1,62 @@
+{
+  "rev-001": {
+    "review_id": "rev-001",
+    "resturant_id": 1,
+    "username": "bob",
+    "review": "Great burgers, crispy fries, and fast delivery every time."
+  },
+  "rev-002": {
+    "review_id": "rev-002",
+    "resturant_id": 1,
+    "username": "leyla",
+    "review": "The milkshake was excellent and the burger was still hot when it arrived."
+  },
+  "rev-003": {
+    "review_id": "rev-003",
+    "resturant_id": 2,
+    "username": "ley7a",
+    "review": "Fresh tacos with lots of flavor. The salsa had a nice kick."
+  },
+  "rev-004": {
+    "review_id": "rev-004",
+    "resturant_id": 4,
+    "username": "bob",
+    "review": "Pizza crust was perfect and the toppings were generous."
+  },
+  "rev-005": {
+    "review_id": "rev-005",
+    "resturant_id": 5,
+    "username": "maya",
+    "review": "Rich curry, warm naan, and a really satisfying portion size."
+  },
+  "rev-006": {
+    "review_id": "rev-006",
+    "resturant_id": 7,
+    "username": "ethan",
+    "review": "Sushi was fresh and well packed. Would order again."
+  },
+  "rev-007": {
+    "review_id": "rev-007",
+    "resturant_id": 11,
+    "username": "sophia",
+    "review": "One of the best butter chicken dishes I have had in Kelowna."
+  },
+  "rev-008": {
+    "review_id": "rev-008",
+    "resturant_id": 14,
+    "username": "oliver",
+    "review": "Breakfast arrived quickly and the pancakes were fluffy and delicious."
+  },
+  "rev-009": {
+    "review_id": "rev-009",
+    "resturant_id": 18,
+    "username": "ava",
+    "review": "The ribs were tender and the BBQ sauce was smoky without being too sweet."
+  },
+  "rev-010": {
+    "review_id": "rev-010",
+    "resturant_id": 24,
+    "username": "noah",
+    "review": "Beautiful presentation, very fresh fish, and great portion sizes."
+  }
+}

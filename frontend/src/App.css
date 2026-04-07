@@ -841,6 +841,37 @@ input {
   gap: 14px;
 }
 
+.reviews-section {
+  margin-top: 22px;
+}
+
+.reviews-list {
+  display: grid;
+  gap: 14px;
+}
+
+.review-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(89, 56, 24, 0.08);
+}
+
+.review-header h5,
+.review-card p {
+  margin: 0;
+}
+
+.review-header h5 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.review-card p {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .menu-card,
 .combo-card {
   padding: 16px 18px;

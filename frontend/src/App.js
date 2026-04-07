@@ -273,6 +273,9 @@ function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [restaurantMenu, setRestaurantMenu] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
+  const [restaurantReviews, setRestaurantReviews] = useState([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState("");
   const [menuError, setMenuError] = useState("");
   const [isMenuLoading, setIsMenuLoading] = useState(false);
   const [cart, setCart] = useState(null);
@@ -606,6 +609,49 @@ function App() {
     return nextRestaurants;
   }, [token, username]);
 
+  const loadRestaurantReviews = useCallback(async (restaurantId) => {
+    if (!restaurantId) {
+      setRestaurantReviews([]);
+      setReviewsError("");
+      setIsReviewsLoading(false);
+      return [];
+    }
+
+    setIsReviewsLoading(true);
+    setReviewsError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/review/reviews/restaurant/${restaurantId}`);
+
+      if (response.ok) {
+        const payload = await response.json();
+        const reviews = Array.isArray(payload) ? payload : [];
+        setRestaurantReviews(reviews);
+        return reviews;
+      }
+
+      const allReviewsResponse = await fetch(`${API_BASE_URL}/review/reviews`);
+      if (!allReviewsResponse.ok) {
+        throw new Error(`Reviews request failed with status ${response.status}`);
+      }
+
+      const allReviewsPayload = await allReviewsResponse.json();
+      const filteredReviews = Array.isArray(allReviewsPayload)
+        ? allReviewsPayload.filter((review) => String(review.resturant_id) === String(restaurantId))
+        : [];
+
+      setRestaurantReviews(filteredReviews);
+      return filteredReviews;
+    } catch (reviewsFetchError) {
+      console.error(reviewsFetchError);
+      setRestaurantReviews([]);
+      setReviewsError("We couldn't load reviews for this restaurant right now.");
+      return [];
+    } finally {
+      setIsReviewsLoading(false);
+    }
+  }, []);
+
   const loadPaymentMethods = useCallback(async () => {
     const cleanUsername = encodeURIComponent(username.trim());
     const response = await fetch(`${API_BASE_URL}/payment/methods?username=${cleanUsername}`);
@@ -807,12 +853,14 @@ function App() {
     setSelectedRestaurant(restaurant);
     setRestaurantMenu(null);
     setMenuItems([]);
+    setRestaurantReviews([]);
+    setReviewsError("");
     setMenuError("");
     setIsMenuLoading(true);
 
     const cleanUsername = encodeURIComponent(username.trim());
     const cleanToken = encodeURIComponent(token.trim());
-    const restaurantId = restaurant.id;
+    const restaurantId = restaurant.restaurant_id || restaurant.id;
 
     try {
       const restaurantResponse = await fetch(
@@ -826,6 +874,7 @@ function App() {
       const restaurantPayload = await restaurantResponse.json();
       const mappedRestaurant = mapRestaurant(restaurantPayload);
       setSelectedRestaurant(mappedRestaurant);
+      const reviewsPromise = loadRestaurantReviews(mappedRestaurant.restaurant_id || restaurantId);
 
       const menuResponse = await fetch(
         `${API_BASE_URL}/dataset/menu/${restaurantId}`
@@ -859,18 +908,23 @@ function App() {
       );
 
       setMenuItems(itemResults.filter(Boolean).map(mapMenuItem));
+      await reviewsPromise;
     } catch (err) {
       console.error(err);
       setMenuError("We couldn't load this restaurant's menu right now.");
+      await loadRestaurantReviews(restaurantId);
     } finally {
       setIsMenuLoading(false);
     }
-  }, [token, username]);
+  }, [loadRestaurantReviews, token, username]);
 
   const handleCloseRestaurant = () => {
     setSelectedRestaurant(null);
     setRestaurantMenu(null);
     setMenuItems([]);
+    setRestaurantReviews([]);
+    setReviewsError("");
+    setIsReviewsLoading(false);
     setMenuError("");
     setIsMenuLoading(false);
   };
@@ -2603,6 +2657,38 @@ function App() {
                   </button>
                 </div>
               ) : null}
+
+              <div className="detail-section reviews-section">
+                <div className="detail-section-header">
+                  <h4>Reviews</h4>
+                  <span>{restaurantReviews.length} posted</span>
+                </div>
+
+                {isReviewsLoading ? (
+                  <p className="detail-empty">Loading reviews...</p>
+                ) : null}
+
+                {!isReviewsLoading && reviewsError ? (
+                  <p className="detail-empty">{reviewsError}</p>
+                ) : null}
+
+                {!isReviewsLoading && !reviewsError && restaurantReviews.length ? (
+                  <div className="reviews-list">
+                    {restaurantReviews.map((entry, index) => (
+                      <article className="review-card" key={entry.review_id || `${entry.username}-${index}`}>
+                        <div className="review-header">
+                          <h5>{entry.username || "Anonymous"}</h5>
+                        </div>
+                        <p>{entry.review}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+
+                {!isReviewsLoading && !reviewsError && !restaurantReviews.length ? (
+                  <p className="detail-empty">No reviews for this restaurant yet.</p>
+                ) : null}
+              </div>
             </div>
           </section>
         ) : null}
