@@ -83,7 +83,10 @@ def get_meus():
 @router.get("/menu/{menu_id}", response_model=Menu)
 def get_menu(menu_id: int):
     try:
-        return menu_storage.find_menu(menu_id)
+        menu = menu_storage.find_menu(menu_id)
+        if menu is None:
+            raise HTTPException(status_code=404, detail="Menu not found")
+        return menu
     except ValueError as error:
         raise HTTPException(status_code=500, detail=str(error))
 

@@ -4,6 +4,52 @@ import "./App.css";
 const API_BASE_URL = "http://localhost:8000";
 const CREATE_RESTAURANT_OPTION = "__create_new_restaurant__";
 
+const DELIVERY_STATUS_LABELS = {
+  Pending: "Order received, waiting to be confirmed",
+  "In Process": "Your order is being prepared",
+  "In Transit": "Your order is out for delivery",
+  Delivered: "Delivered",
+  Cancelled: "Cancelled",
+};
+
+const DELIVERY_DONE_STATUSES = new Set(["Delivered", "Cancelled"]);
+
+function partitionDeliveries(orders) {
+  const active = [];
+  const completed = [];
+  if (!Array.isArray(orders)) {
+    return { active, completed };
+  }
+  for (const order of orders) {
+    if (DELIVERY_DONE_STATUSES.has(order.status)) {
+      completed.push(order);
+    } else {
+      active.push(order);
+    }
+  }
+  return { active, completed };
+}
+
+function formatDeliveryWhen(iso) {
+  if (!iso || typeof iso !== "string") {
+    return "—";
+  }
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+      return iso;
+    }
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 const fallbackRestaurants = [
   {
     id: "1",
@@ -300,6 +346,10 @@ function App() {
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [checkoutResult, setCheckoutResult] = useState(null);
   const [checkoutOrderSummary, setCheckoutOrderSummary] = useState(null);
+  const [showDeliveries, setShowDeliveries] = useState(false);
+  const [myDeliveries, setMyDeliveries] = useState([]);
+  const [isDeliveriesLoading, setIsDeliveriesLoading] = useState(false);
+  const [deliveriesError, setDeliveriesError] = useState("");
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showManagementPanel, setShowManagementPanel] = useState(false);
   const [managementRestaurantId, setManagementRestaurantId] = useState("");
@@ -332,6 +382,11 @@ function App() {
 
     return ["All", ...new Set(mappedCuisines)];
   }, [restaurants]);
+
+  const { active: deliveriesInProgress, completed: deliveriesCompleted } = useMemo(
+    () => partitionDeliveries(myDeliveries),
+    [myDeliveries]
+  );
 
   const filteredRestaurants = useMemo(() => {
     return restaurants.filter((restaurant) => {
@@ -689,6 +744,45 @@ function App() {
     }
   }, [refreshFavourites]);
 
+  const refreshMyDeliveries = useCallback(async () => {
+    const u = username.trim();
+    const t = token.trim();
+    if (!u || !t) {
+      setMyDeliveries([]);
+      return [];
+    }
+    const cleanUsername = encodeURIComponent(u);
+    const cleanToken = encodeURIComponent(t);
+    const response = await fetch(
+      `${API_BASE_URL}/delivery/past-orders/${cleanUsername}?token=${cleanToken}`
+    );
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null);
+      throw new Error(failure?.detail || `Orders request failed with status ${response.status}`);
+    }
+    const payload = await response.json();
+    const list = Array.isArray(payload) ? payload : [];
+    setMyDeliveries(list);
+    return list;
+  }, [token, username]);
+
+  const openDeliveriesPanel = useCallback(async () => {
+    setShowDeliveries(true);
+    setShowCart(false);
+    setShowFavourites(false);
+    setShowAccountMenu(false);
+    setDeliveriesError("");
+    setIsDeliveriesLoading(true);
+    try {
+      await refreshMyDeliveries();
+    } catch (err) {
+      console.error(err);
+      setDeliveriesError(err.message || "We couldn't load your orders.");
+    } finally {
+      setIsDeliveriesLoading(false);
+    }
+  }, [refreshMyDeliveries]);
+
   const openCheckoutPanel = useCallback(async () => {
     if (!username.trim() || !token.trim()) {
       setCheckoutError("Log in before checking out.");
@@ -837,13 +931,26 @@ function App() {
       } else {
         await refreshCart();
       }
+
+      refreshMyDeliveries().catch(() => {});
     } catch (err) {
       console.error(err);
       setCheckoutError(err.message || "We couldn't complete checkout.");
     } finally {
       setIsCheckoutLoading(false);
     }
-  }, [cart, checkoutMethodMode, loadPaymentMethods, paymentForm, refreshCart, savePaymentMethod, selectedPaymentMethodId, token, username]);
+  }, [
+    cart,
+    checkoutMethodMode,
+    loadPaymentMethods,
+    paymentForm,
+    refreshCart,
+    refreshMyDeliveries,
+    savePaymentMethod,
+    selectedPaymentMethodId,
+    token,
+    username,
+  ]);
 
   const handleRestaurantSelect = useCallback(async (restaurant) => {
     if (!username.trim() || !token.trim()) {
@@ -2074,6 +2181,10 @@ function App() {
                 <span>Favorites</span>
                 <strong>{favouriteRestaurants.length}</strong>
               </button>
+              <button className="header-pill" onClick={openDeliveriesPanel} type="button">
+                <span>Orders</span>
+                <strong>{deliveriesInProgress.length}</strong>
+              </button>
               <button className="header-pill" onClick={() => setShowCart(true)} type="button">
                 <span>Cart</span>
                 <strong>{totalCartItems}</strong>
@@ -2108,6 +2219,9 @@ function App() {
                         <strong>{userProfile.address || "Unavailable"}</strong>
                       </p>
                     </div>
+                    <button className="account-menu-item" onClick={openDeliveriesPanel} type="button">
+                      My orders
+                    </button>
                     <button className="account-menu-item" onClick={handleChangeAccount} type="button">
                       Change login
                     </button>
@@ -2826,6 +2940,120 @@ function App() {
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+        ) : null}
+
+        {showDeliveries ? (
+          <section className="detail-overlay" onClick={() => setShowDeliveries(false)}>
+            <div
+              className="cart-panel deliveries-panel"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="detail-header">
+                <div>
+                  <p className="eyebrow">Deliveries</p>
+                  <h3>Your orders</h3>
+                  <p className="section-copy">
+                    In-progress orders update as the kitchen and driver move along. Past orders stay below for reference.
+                  </p>
+                </div>
+                <div className="cart-header-actions">
+                  <button
+                    className="ghost-action"
+                    type="button"
+                    disabled={isDeliveriesLoading}
+                    onClick={async () => {
+                      setDeliveriesError("");
+                      setIsDeliveriesLoading(true);
+                      try {
+                        await refreshMyDeliveries();
+                      } catch (err) {
+                        console.error(err);
+                        setDeliveriesError(err.message || "We couldn't refresh orders.");
+                      } finally {
+                        setIsDeliveriesLoading(false);
+                      }
+                    }}
+                  >
+                    Refresh
+                  </button>
+                  <button className="ghost-action" onClick={() => setShowDeliveries(false)} type="button">
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              {deliveriesError ? <div className="detail-state"><p>{deliveriesError}</p></div> : null}
+
+              {isDeliveriesLoading ? (
+                <p className="detail-empty">Loading your orders...</p>
+              ) : (
+                <div className="deliveries-grid">
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>In progress</h4>
+                      <span>{deliveriesInProgress.length} active</span>
+                    </div>
+                    {deliveriesInProgress.length ? (
+                      <div className="menu-list">
+                        {deliveriesInProgress.map((order) => (
+                          <article className="cart-item-card delivery-order-card" key={order.order_id}>
+                            <div>
+                              <h5>{order.restaurant || "Restaurant"}</h5>
+                              <p className="delivery-status-line">
+                                {DELIVERY_STATUS_LABELS[order.status] || order.status}
+                              </p>
+                              <p className="delivery-meta">
+                                Est. {formatDeliveryWhen(order.estimated_delivery)}
+                                {typeof order.eta_seconds === "number" && order.eta_seconds > 0
+                                  ? ` · ~${Math.ceil(order.eta_seconds / 60)} min`
+                                  : ""}
+                              </p>
+                              <p className="delivery-id">#{order.order_id}</p>
+                            </div>
+                            <div className="delivery-order-total">
+                              <strong>${Number(order.total || 0).toFixed(2)}</strong>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="detail-empty">No active deliveries. Place an order from your cart.</p>
+                    )}
+                  </div>
+
+                  <div className="detail-section">
+                    <div className="detail-section-header">
+                      <h4>Completed</h4>
+                      <span>{deliveriesCompleted.length} past</span>
+                    </div>
+                    {deliveriesCompleted.length ? (
+                      <div className="menu-list">
+                        {deliveriesCompleted.map((order) => (
+                          <article className="cart-item-card delivery-order-card delivery-order-past" key={order.order_id}>
+                            <div>
+                              <h5>{order.restaurant || "Restaurant"}</h5>
+                              <p className="delivery-status-line">
+                                {DELIVERY_STATUS_LABELS[order.status] || order.status}
+                              </p>
+                              <p className="delivery-meta">{formatDeliveryWhen(order.created_at)}</p>
+                              <p className="delivery-id">#{order.order_id}</p>
+                            </div>
+                            <div className="delivery-order-total">
+                              <strong>${Number(order.total || 0).toFixed(2)}</strong>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="detail-empty">No completed orders yet.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         ) : null}
