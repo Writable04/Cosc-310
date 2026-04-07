@@ -8,4 +8,5 @@ class Resturant(BaseModel):
     restaurantAddress: str
     durationMinutes: int = 0
     distanceKM: float = 0.0
+    owner: str | None = None
     
