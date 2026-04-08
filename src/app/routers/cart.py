@@ -19,7 +19,7 @@ def clear_cart_contents(username: str) -> Cart:
     result = cart_storage.clearUserCart(username)
     if not result:
         raise HTTPException(status_code=400, detail="Cart could not be cleared")
-    return result
+    return cart_storage.loadUserCart(username)
 
 @router.delete("/{username}/{token}", dependencies=[Depends(require_auth)])
 def remove_cart_from_db(username: str):

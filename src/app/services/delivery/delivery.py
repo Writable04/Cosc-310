@@ -5,17 +5,13 @@ from datetime import datetime, timezone, timedelta
 from app.schemas.deliverySchema import DeliveryOrder, DeliveryStatus, STATUS_PROGRESSION
 from app.repositories.delivery_repo import DeliveryStorage
 from app.repositories.storage_accounts import AccountsStorage
-from app.repositories.resturant_repo import ResturantStorage
-from app.repositories.map_storage import MapStorage
 from app.services.notifications.notifications import Notification
 
-IN_PROCESS_SECONDS = 600  # 10 min prep time
+# For presentation every order finishes in 3 minutes (ignores real map distance).
+PRESENTATION_ORDER_TOTAL_SECONDS = 180
+PRESENTATION_SLEEP_BEFORE_IN_TRANSIT = 90
+PRESENTATION_SLEEP_BEFORE_DELIVERED = 90
 
-def _get_transit_seconds(username: str, restaurant_name: str) -> int:
-    user_address = AccountsStorage().get_address(username)
-    restaurant = ResturantStorage().find_resturant_query(restaurant_name, "name")
-    minutes = MapStorage().calculateDeliveryTimeMins(restaurant.restaurantAddress, user_address)
-    return minutes * 60
 
 def _format_estimated_delivery(estimated_delivery: str) -> str:
     from datetime import datetime, timezone
@@ -38,8 +34,7 @@ class DeliveryService:
 
     def start_delivery(self, username: str, restaurant: str, items: list[dict], total: float) -> DeliveryOrder:
         now = datetime.now(timezone.utc)
-        transit_seconds = _get_transit_seconds(username, restaurant)
-        estimated = now + timedelta(seconds=IN_PROCESS_SECONDS + transit_seconds)
+        estimated = now + timedelta(seconds=PRESENTATION_ORDER_TOTAL_SECONDS)
 
         order = DeliveryOrder(
             order_id=str(uuid.uuid4()),
@@ -68,15 +63,10 @@ class DeliveryService:
         return [self._with_eta(o) for o in self.repo.get_user_orders(username)]
 
     async def auto_progress(self, order_id: str) -> None:
-        transit_seconds = _get_transit_seconds(
-            self.repo.get_order(order_id).username,
-            self.repo.get_order(order_id).restaurant,
-        )
-        # In Process right away, In Transit after 10mins, Delivered after eta time
         sleep_before = {
             DeliveryStatus.IN_PROCESS: 0,
-            DeliveryStatus.IN_TRANSIT: IN_PROCESS_SECONDS,
-            DeliveryStatus.DELIVERED:  transit_seconds,
+            DeliveryStatus.IN_TRANSIT: PRESENTATION_SLEEP_BEFORE_IN_TRANSIT,
+            DeliveryStatus.DELIVERED: PRESENTATION_SLEEP_BEFORE_DELIVERED,
         }
         for status in STATUS_PROGRESSION[1:]:
             await asyncio.sleep(sleep_before.get(status, 0))
