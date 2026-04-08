@@ -358,6 +358,11 @@ function App() {
   const [myDeliveries, setMyDeliveries] = useState([]);
   const [isDeliveriesLoading, setIsDeliveriesLoading] = useState(false);
   const [deliveriesError, setDeliveriesError] = useState("");
+  const [activeReviewOrderId, setActiveReviewOrderId] = useState("");
+  const [reviewDraft, setReviewDraft] = useState("");
+  const [reviewSubmitError, setReviewSubmitError] = useState("");
+  const [reviewSubmitNotice, setReviewSubmitNotice] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showManagementPanel, setShowManagementPanel] = useState(false);
   const [managementRestaurantId, setManagementRestaurantId] = useState("");
@@ -420,6 +425,19 @@ function App() {
       return matchesSearch && matchesCuisine;
     });
   }, [restaurants, searchTerm, selectedCuisine]);
+
+  const restaurantsByName = useMemo(() => {
+    const nextMap = new Map();
+
+    restaurants.forEach((restaurant) => {
+      const key = String(restaurant.name || "").trim().toLowerCase();
+      if (key) {
+        nextMap.set(key, restaurant);
+      }
+    });
+
+    return nextMap;
+  }, [restaurants]);
 
   const fetchRestaurants = useCallback(async ({ useFilters = false, nextUsername, nextToken } = {}) => {
     const activeUsername = (nextUsername ?? username).trim();
@@ -738,6 +756,72 @@ function App() {
     setCheckoutMethodMode(nextMethodId ? "saved" : "new");
     return methods;
   }, [username]);
+
+  const openReviewComposer = useCallback((order) => {
+    setActiveReviewOrderId(order.order_id);
+    setReviewDraft("");
+    setReviewSubmitError("");
+    setReviewSubmitNotice("");
+  }, []);
+
+  const closeReviewComposer = useCallback(() => {
+    setActiveReviewOrderId("");
+    setReviewDraft("");
+    setReviewSubmitError("");
+    setReviewSubmitNotice("");
+  }, []);
+
+  const submitOrderReview = useCallback(async (order) => {
+    const matchedRestaurant = restaurantsByName.get(String(order.restaurant || "").trim().toLowerCase());
+    const reviewText = reviewDraft.trim();
+
+    if (!matchedRestaurant?.restaurant_id) {
+      setReviewSubmitNotice("");
+      setReviewSubmitError("We couldn't match this order to a restaurant review page.");
+      return;
+    }
+
+    if (!reviewText) {
+      setReviewSubmitNotice("");
+      setReviewSubmitError("Write a short review before submitting.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    setReviewSubmitError("");
+    setReviewSubmitNotice("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/review/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          resturant_id: Number(matchedRestaurant.restaurant_id),
+          username: username.trim() || "Anonymous",
+          review: reviewText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Review request failed with status ${response.status}`);
+      }
+
+      if (String(selectedRestaurant?.restaurant_id) === String(matchedRestaurant.restaurant_id)) {
+        await loadRestaurantReviews(matchedRestaurant.restaurant_id);
+      }
+
+      setReviewSubmitNotice(`Review added for ${order.restaurant || "this restaurant"}.`);
+      setReviewDraft("");
+      setActiveReviewOrderId("");
+    } catch (submitError) {
+      console.error(submitError);
+      setReviewSubmitError("We couldn't save your review right now. Please try again.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }, [loadRestaurantReviews, restaurantsByName, reviewDraft, selectedRestaurant?.restaurant_id, username]);
 
   const openFavouritesPanel = useCallback(async () => {
     setShowFavourites(true);
@@ -3165,17 +3249,67 @@ function App() {
                       <div className="menu-list">
                         {deliveriesCompleted.map((order) => (
                           <article className="cart-item-card delivery-order-card delivery-order-past" key={order.order_id}>
-                            <div>
-                              <h5>{order.restaurant || "Restaurant"}</h5>
-                              <p className="delivery-status-line">
-                                {DELIVERY_STATUS_LABELS[order.status] || order.status}
-                              </p>
-                              <p className="delivery-meta">{formatDeliveryWhen(order.created_at)}</p>
-                              <p className="delivery-id">#{order.order_id}</p>
+                            <div className="delivery-order-main">
+                              <div>
+                                <h5>{order.restaurant || "Restaurant"}</h5>
+                                <p className="delivery-status-line">
+                                  {DELIVERY_STATUS_LABELS[order.status] || order.status}
+                                </p>
+                                <p className="delivery-meta">{formatDeliveryWhen(order.created_at)}</p>
+                                <p className="delivery-id">#{order.order_id}</p>
+                              </div>
+                              <div className="delivery-order-side">
+                                <div className="delivery-order-total">
+                                  <strong>${Number(order.total || 0).toFixed(2)}</strong>
+                                </div>
+                                {order.status === "Delivered" ? (
+                                  <button
+                                    type="button"
+                                    className="inline-action"
+                                    onClick={() => openReviewComposer(order)}
+                                  >
+                                    Add review
+                                  </button>
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="delivery-order-total">
-                              <strong>${Number(order.total || 0).toFixed(2)}</strong>
-                            </div>
+
+                            {activeReviewOrderId === order.order_id ? (
+                              <div className="delivery-review-form">
+                                <label className="management-label" htmlFor={`review-${order.order_id}`}>
+                                  Share your experience
+                                  <textarea
+                                    id={`review-${order.order_id}`}
+                                    rows="4"
+                                    value={reviewDraft}
+                                    onChange={(event) => setReviewDraft(event.target.value)}
+                                    placeholder={`Tell people what stood out about ${order.restaurant || "this restaurant"}.`}
+                                  />
+                                </label>
+
+                                {reviewSubmitError ? <p className="detail-empty">{reviewSubmitError}</p> : null}
+                                {reviewSubmitNotice ? <p className="detail-empty">{reviewSubmitNotice}</p> : null}
+
+                                <div className="delivery-review-actions">
+                                  <button
+                                    type="button"
+                                    className="inline-action"
+                                    onClick={() => submitOrderReview(order)}
+                                    disabled={isSubmittingReview}
+                                  >
+                                    {isSubmittingReview ? "Saving..." : "Submit review"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ghost-action"
+                                    onClick={closeReviewComposer}
+                                    disabled={isSubmittingReview}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
                           </article>
                         ))}
                       </div>
