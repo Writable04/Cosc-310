@@ -1,0 +1,63 @@
+import pytest
+from unittest.mock import patch, MagicMock
+from pathlib import Path
+from fastapi.testclient import TestClient
+
+from app.main import app
+from app.repositories.storage_accounts import AccountsStorage
+from app.schemas.paymentSchema import PaymentMethod
+
+client = TestClient(app)
+@pytest.fixture
+def accounts(tmp_path: Path) -> AccountsStorage:
+    storage = AccountsStorage(path=tmp_path / "accounts.json")
+    storage.write("leyla", {
+        "email": "leyl7aa@gmail.com", "token": "5aa78c14-f6f9-43f8-b122-c28cd447b297",
+        "password": "Leyla2005!",
+        "username": "leyla", "role": "admin",
+        "address": "975 Academy Way, Kelowna, BC", "reward_points": 0
+    })
+    return storage
+
+#storing points
+def test_add_and_get_points(accounts):
+    assert accounts.get_reward_points("leyla") == 0
+    assert accounts.add_reward_points("leyla", 50) == 50
+    assert accounts.add_reward_points("leyla", 20) == 70
+
+def test_deduct_points(accounts):
+    accounts.add_reward_points("leyla", 100)
+    assert accounts.deduct_reward_points("leyla", 40) == 60
+
+def test_deduct_beyond_balance(accounts):
+    accounts.add_reward_points("leyla", 30)
+    assert accounts.deduct_reward_points("leyla", 100) == 0
+
+def test_unknown_user_returns_zero(accounts):
+    assert accounts.get_reward_points("nobody") == 0
+
+#endpoints
+def test_get_reward_points_endpoint():
+    with patch("app.routers.payment.accounts_storage") as MockAcct:
+        MockAcct.get_reward_points.return_value = 100
+        resp = client.get("/payment/reward-points?username=testuser")
+    assert resp.status_code == 200
+    assert resp.json()["reward_points"] == 100
+    assert resp.json()["discount_value"] == 5.0
+
+def test_redeem_points_choice_endpoint():
+    with patch("app.routers.payment.accounts_storage") as MockAcct:
+        MockAcct.get_reward_points.return_value = 100
+        resp = client.get("/payment/redeem-points/choice?username=testuser&cart_total=50.0")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["discount"] == 5.0
+    assert data["discounted_total"] == 45.0
+    assert data["points_used"] == 100
+    assert data["rollover_points"] == 0
+
+def test_redeem_points_choice_rollover():
+    with patch("app.routers.payment.accounts_storage") as MockAcct:
+        MockAcct.get_reward_points.return_value == 1000
+        resp = client.get("/payment/redeem-points/choice?username=testuser&cart_total=30.0")
+    assert resp.status_code == 200

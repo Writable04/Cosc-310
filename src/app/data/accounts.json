@@ -5,7 +5,9 @@
     "password": "$2b$12$k9XO0p0PuzxtWqvGngfWnO.iS4H6ABRUGF1YCrMWd9ZV5VI/22OAG",
     "username": "bob",
     "role": "admin",
-    "address": "1001 Fuller Ave, Kelowna, BC V1Y 6X6"
+    "address": "1001 Fuller Ave, Kelowna, BC V1Y 6X6",
+    "reward_points": 0,
+    "redeem_points": false
   },
   "ley7a": {
     "email": "leyl7aa@gmail.com",
@@ -13,7 +15,9 @@
     "password": "$2b$12$M2x3dQ7HtFRV6ewJmSWcuecjFY26n4sv02sYD3R9lIxAoEU7MIv1u",
     "username": "ley7a",
     "role": "Customer",
-    "address": "975 Academy Way, Kelowna, BC"
+    "address": "975 Academy Way, Kelowna, BC",
+    "reward_points": 0,
+    "redeem_points": false
   },
   "leyla": {
     "email": "leyl7aa@gmail.com",
@@ -21,7 +25,9 @@
     "password": "$2b$12$vzUjA8HcUzyLz47p1M72tei//wwRwSncilTsJGAF9UrB/eUj87.Zy",
     "username": "leyla",
     "role": "admin",
-    "address": "975 Academy Way, Kelowna, BC"
+    "address": "975 Academy Way, Kelowna, BC",
+    "reward_points": 0,
+    "redeem_points": false
   },
   "tomiuser1": {
     "email": "tomidaisy@gmail.com",
@@ -33,6 +39,8 @@
     "consecutive_password_fails": 0,
     "locked": false,
     "one_time_code": 398894,
-    "code_timestamp": 1775634573.305854
+    "code_timestamp": 1775634573.305854,
+    "reward_points": 0,
+    "redeem_points": false
   }
 }

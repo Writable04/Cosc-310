@@ -7,6 +7,8 @@ class AccountInfo(BaseModel):
     username: str
     role: str
     address: str = ""
+    reward_points: int = 0
+    redeem_points: bool = False
     consecutive_password_fails: int = 0
     locked: bool = False
     one_time_code: int = 0
