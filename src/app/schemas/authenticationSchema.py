@@ -8,6 +8,7 @@ class AccountInfo(BaseModel):
     role: str
     address: str = ""
     reward_points: int = 0
+    redeem_points: bool = False
 
 class AuthenticationResponse(BaseModel):
     token: str

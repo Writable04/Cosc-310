@@ -22,7 +22,6 @@ class SavedPaymentMethod(BaseModel):
 class CheckoutRequest(BaseModel):
     method_id: Optional[str] = None
     new_method: Optional[PaymentMethod] = None
-    redeem_points: bool = False
 
     @model_validator(mode="after")
     def check_mutually_exclusive(self) -> "CheckoutRequest":

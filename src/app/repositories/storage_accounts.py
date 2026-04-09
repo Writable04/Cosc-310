@@ -50,6 +50,12 @@ class AccountsStorage(Storage[AccountInfo]):
 
         return AccountInfo(**data).address
 
+    def get_redeem_choice(self, username: str) -> bool:
+        data = self.read(username)
+        if data is None:
+            return False
+        return AccountInfo(**data).redeem_points
+ 
     def get_reward_points(self, username: str) -> int:
         data = self.read(username)
         if data is None:

@@ -24,6 +24,7 @@
     "username": "leyla",
     "role": "admin",
     "address": "975 Academy Way, Kelowna, BC",
-    "reward_points": 51
+    "reward_points": 8,
+    "redeem_points": true
   }
 }
