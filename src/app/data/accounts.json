@@ -6,7 +6,8 @@
     "username": "bob",
     "role": "admin",
     "address": "1001 Fuller Ave, Kelowna, BC V1Y 6X6",
-    "reward_points": 0
+    "reward_points": 0,
+    "redeem_points": false
   },
   "ley7a": {
     "email": "leyl7aa@gmail.com",
@@ -15,7 +16,8 @@
     "username": "ley7a",
     "role": "Customer",
     "address": "975 Academy Way, Kelowna, BC",
-    "reward_points": 0
+    "reward_points": 0,
+    "redeem_points": false
   },
   "leyla": {
     "email": "leyl7aa@gmail.com",
@@ -24,7 +26,7 @@
     "username": "leyla",
     "role": "admin",
     "address": "975 Academy Way, Kelowna, BC",
-    "reward_points": 8,
-    "redeem_points": true
+    "reward_points": 0,
+    "redeem_points": false
   }
 }
