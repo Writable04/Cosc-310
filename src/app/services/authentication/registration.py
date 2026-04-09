@@ -60,7 +60,6 @@ class Registration:
         account = AccountInfo(username=username, password=encrypted_password, role=role, email=email, token=token, address=address)
 
         self.storage.add_new_account(account)
-
         return self.login(username, password, token)
     
     
