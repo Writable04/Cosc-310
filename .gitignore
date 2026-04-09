@@ -35,6 +35,7 @@ env/
 .coverage
 htmlcov/
 .pytest_cache/
+tests/test_reset_password.py
 
 # Misc
 .DS_Store

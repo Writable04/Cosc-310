@@ -256,14 +256,13 @@ class CartStorage(Storage[Cart]):
         theCart = self.read(UserID)
         if not theCart:
             return 0.0
-
+        
         subtotal = theCart["subtotal"]
         discount = self.getTotalDiscount(theCart)
-
         checkout_total = subtotal - discount
 
         theCart["checkout_total"] = round(checkout_total, 2)
         self.write(UserID, theCart)
         
         return checkout_total
-        
+    

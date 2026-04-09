@@ -8,6 +8,7 @@ from fastapi import HTTPException, Request
 from app.services.notifications.notifications import Notification
 from app.repositories.cart_repo import CartStorage
 from app.repositories.favourite_repo import FavouriteStorage
+from app.repositories.reset_password_repo import ResetPassword
 
 
 accounts_storage = AccountsStorage()
@@ -19,6 +20,7 @@ menu_storage = MenuStorage()
 item_storage = ItemStorage()
 cart_storage = CartStorage()
 favourite_storage = FavouriteStorage(resturant_storage, item_storage)
+reset_password = ResetPassword(accounts_storage, authentication, notifications_server)
 
 admin_routes=['/notification']
 resturant_manager_routes=['/dataset']
