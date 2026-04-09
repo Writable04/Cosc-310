@@ -17,19 +17,10 @@ def _make_order(order_id="order-1", status=DeliveryStatus.PENDING, restaurant="P
         estimated_delivery=(now + timedelta(seconds=45)).isoformat(),
     )
 
-def _mock_maps(MockAcct, MockRest, MockMap):
-    MockAcct.return_value.get_address.return_value = "975 Academy Way, Kelowna, BC"
-    MockRest.return_value.find_resturant_query.return_value = MagicMock(restaurantAddress="120 Old Vernon Rd, Kelowna, BC")
-    MockMap.return_value.calculateDeliveryTimeMins.return_value = 12
-
-
 def test_start_delivery_creates_order():
     with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo, \
          patch("app.services.delivery.delivery.AccountsStorage") as MockAcct, \
-         patch("app.services.delivery.delivery.ResturantStorage") as MockRest, \
-         patch("app.services.delivery.delivery.MapStorage") as MockMap, \
          patch("app.services.delivery.delivery.Notification"):
-        _mock_maps(MockAcct, MockRest, MockMap)
         MockAcct.return_value.get_account_info.return_value = MagicMock(email="t@t.com", username="testuser")
         MockRepo.return_value.save_order.side_effect = lambda o: o
         order = DeliveryService().start_delivery("testuser", "Pizza Palace", [], 49.99)
@@ -78,13 +69,9 @@ async def test_auto_progress():
     statuses = []
     with patch("app.services.delivery.delivery.DeliveryStorage") as MockRepo, \
          patch("app.services.delivery.delivery.AccountsStorage") as MockAcct, \
-         patch("app.services.delivery.delivery.ResturantStorage") as MockRest, \
-         patch("app.services.delivery.delivery.MapStorage") as MockMap, \
          patch("app.services.delivery.delivery.Notification"), \
          patch("asyncio.sleep", new_callable=AsyncMock):
-        _mock_maps(MockAcct, MockRest, MockMap)
         MockAcct.return_value.get_account_info.return_value = MagicMock(email="t@t.com", username="testuser")
-        MockRepo.return_value.get_order.return_value = _make_order()
         MockRepo.return_value.update_status.side_effect = lambda oid, s: (statuses.append(s), _make_order(status=s))[1]
         await DeliveryService().auto_progress("order-1")
     assert statuses == [DeliveryStatus.IN_PROCESS, DeliveryStatus.IN_TRANSIT, DeliveryStatus.DELIVERED]

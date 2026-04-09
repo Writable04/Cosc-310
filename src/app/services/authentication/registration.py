@@ -1,26 +1,44 @@
 from app.services.authentication.auth import Authentication
 from app.repositories.storage_accounts import AccountsStorage
 from app.schemas.authenticationSchema import AccountInfo
+from app.repositories.reset_password_repo import ResetPassword
+from app.services.notifications.notifications import Notification
 import validators
 
 class Registration:
-    def __init__(self, storage: AccountsStorage, authentication: Authentication):
+    def __init__(self, storage: AccountsStorage, authentication: Authentication, reset_password = ResetPassword, notification = Notification):
         self.storage = storage
         self.authentication = authentication
-
+        self.reset_password = reset_password(storage, authentication, notification)
 
     def login(self, username: str, password: str, token: str | None = None) -> str:
+        MAX_FAILS = 10 # after this value, your account is locked
+        WARNING_FAILS = 5 # after this value, you will be informed of your remaining attempts
+        
         if token is None:
             token = self.authentication.generate_new_token()
             self.storage.update_token(username, token)
 
         account = self.storage.get_account_info(username)
+        if account.locked is True:
+            # block from being able to login
+            # prompt to reset password 
+            raise ValueError("Too many failed login attempts. Please reset your password.")
+        
         if account is None:
             raise ValueError("Account not found")
 
+        # when password is wrong MAX_FAILS times, you have to reset your password
         if not self.authentication.verify_password(password, account.password):
-            raise ValueError("Invalid password")
-
+            fails = self.reset_password.update_login_fails(username)
+            if(fails>=MAX_FAILS):
+                # lock the account, do forgotten password protocol
+                self.storage.update(username, {"locked": True})
+                raise ValueError("Too many failed login attempts. Account has been locked. Please reset your password.")
+            elif (fails > WARNING_FAILS):
+                raise ValueError(f"Invalid password. {MAX_FAILS - fails} attempts remaining.")
+            else: 
+                raise ValueError("Invalid password.")
         return token
 
 
