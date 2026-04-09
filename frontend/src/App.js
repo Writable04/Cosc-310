@@ -316,12 +316,16 @@ function App() {
   const [draftEmail, setDraftEmail] = useState("");
   const [draftRole, setDraftRole] = useState("admin");
   const [draftAddress, setDraftAddress] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
   const [data, setData] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [error, setError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
+  const [showResetPasswordButton, setShowResetPasswordButton] = useState(false);
   const [hasLoadedLiveData, setHasLoadedLiveData] = useState(false);
   const [showAuthGate, setShowAuthGate] = useState(true);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -507,6 +511,7 @@ function App() {
     setIsLoading(true);
     setError("");
     setAuthNotice("");
+    setShowResetPasswordButton(false);
 
     let nextToken = "";
 
@@ -545,7 +550,10 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || "Authentication failed.");
+      const nextError = err.message || "Authentication failed.";
+      const shouldOfferReset = authMode === "login" && nextError === "Invalid password.";
+      setError(nextError);
+      setShowResetPasswordButton(shouldOfferReset);
       setIsLoading(false);
       return;
     }
@@ -564,6 +572,9 @@ function App() {
       setDraftConfirmPassword("");
       setDraftEmail(authMode === "register" ? draftEmail.trim() : draftEmail);
       setDraftAddress(authMode === "register" ? draftAddress.trim() : draftAddress);
+      setResetCode("");
+      setResetNewPassword("");
+      setShowResetPasswordButton(false);
 
       const cleanUsername = encodeURIComponent(nextUsername);
       const cleanToken = encodeURIComponent(nextToken);
@@ -616,9 +627,12 @@ function App() {
     setDraftEmail("");
     setDraftRole("admin");
     setDraftAddress("");
+    setResetCode("");
+    setResetNewPassword("");
     setShowAuthGate(true);
     setError("");
     setAuthNotice("");
+    setShowResetPasswordButton(false);
     setShowFavourites(false);
     setFavouriteRestaurants([]);
     setFavouritesError("");
@@ -633,11 +647,86 @@ function App() {
       setDraftEmail("");
       setDraftRole("admin");
       setDraftAddress("");
+      setResetCode("");
+      setResetNewPassword("");
       setAuthMode("login");
       setShowAuthGate(false);
       setShowAccountMenu(false);
       setError("");
       setAuthNotice("");
+      setShowResetPasswordButton(false);
+    }
+  };
+
+  const handleResetPasswordRequest = async () => {
+    const nextUsername = draftUsername.trim();
+
+    if (!nextUsername) {
+      setError("Enter your username before requesting a password reset.");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setError("");
+    setAuthNotice("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/reset_password/${encodeURIComponent(nextUsername)}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const detail = payload?.detail || `Password reset failed with status ${response.status}`;
+        throw new Error(detail);
+      }
+
+      setAuthNotice("Password reset code sent. Check your email for the verification code.");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "We couldn't start password reset.");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    const nextUsername = draftUsername.trim();
+    const nextCode = resetCode.trim();
+    const nextPassword = resetNewPassword.trim();
+
+    if (!nextUsername || !nextCode || !nextPassword) {
+      setError("Enter your username, one-time code, and new password.");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setError("");
+    setAuthNotice("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/reset_password/${encodeURIComponent(nextUsername)}/${encodeURIComponent(nextPassword)}/${encodeURIComponent(nextPassword)}/${encodeURIComponent(nextCode)}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const detail = payload?.detail || `Password reset failed with status ${response.status}`;
+        throw new Error(detail);
+      }
+
+      setAuthNotice("Password reset successful. You can now log in with your new password.");
+      setDraftPassword("");
+      setResetCode("");
+      setResetNewPassword("");
+      setShowResetPasswordButton(false);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "We couldn't reset the password.");
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -2188,6 +2277,9 @@ function App() {
                   setAuthMode("login");
                   setError("");
                   setAuthNotice("");
+                  setResetCode("");
+                  setResetNewPassword("");
+                  setShowResetPasswordButton(false);
                 }}
               >
                 Login
@@ -2199,6 +2291,9 @@ function App() {
                   setAuthMode("register");
                   setError("");
                   setAuthNotice("");
+                  setResetCode("");
+                  setResetNewPassword("");
+                  setShowResetPasswordButton(false);
                 }}
               >
                 Create user
@@ -2211,7 +2306,12 @@ function App() {
                 type="text"
                 placeholder="Enter username"
                 value={draftUsername}
-                onChange={(e) => setDraftUsername(e.target.value)}
+                onChange={(e) => {
+                  setDraftUsername(e.target.value);
+                  setResetCode("");
+                  setResetNewPassword("");
+                  setShowResetPasswordButton(false);
+                }}
               />
             </label>
 
@@ -2221,7 +2321,12 @@ function App() {
                 type="password"
                 placeholder={authMode === "login" ? "Enter password" : "Create password"}
                 value={draftPassword}
-                onChange={(e) => setDraftPassword(e.target.value)}
+                onChange={(e) => {
+                  setDraftPassword(e.target.value);
+                  setResetCode("");
+                  setResetNewPassword("");
+                  setShowResetPasswordButton(false);
+                }}
               />
             </label>
 
@@ -2291,6 +2396,48 @@ function App() {
                     : "Create user"}
               </button>
             </div>
+
+            {authMode === "login" && showResetPasswordButton ? (
+              <div className="auth-reset-panel">
+                <button
+                  type="button"
+                  className="auth-reset-button"
+                  onClick={handleResetPasswordRequest}
+                  disabled={isResettingPassword || isLoading}
+                >
+                  {isResettingPassword ? "Sending reset code..." : "Reset password"}
+                </button>
+
+                <label>
+                  One-time code
+                  <input
+                    type="text"
+                    placeholder="Enter verification code"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  New password
+                  <input
+                    type="password"
+                    placeholder="Enter new password"
+                    value={resetNewPassword}
+                    onChange={(e) => setResetNewPassword(e.target.value)}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className="auth-reset-submit"
+                  onClick={handleResetPasswordSubmit}
+                  disabled={isResettingPassword || isLoading}
+                >
+                  {isResettingPassword ? "Resetting password..." : "Submit new password"}
+                </button>
+              </div>
+            ) : null}
 
             <div className="panel-status">
               <p>
