@@ -1261,6 +1261,25 @@ input {
   margin: 0;
 }
 
+.checkout-rewards-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.checkout-rewards-balance {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.checkout-rewards-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
 .combos-summary {
   margin-top: 20px;
 }

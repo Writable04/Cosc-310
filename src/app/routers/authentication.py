@@ -25,4 +25,11 @@ def get_account_info(username: str) -> dict:
     account = accounts_storage.get_account_info(username)
     if account is None:
         raise HTTPException(status_code=404, detail="Account not found")
-    return {"email": account.email, "role": account.role, "address": account.address, "locked": account.locked, "consecutive login fails": account.consecutive_password_fails}
+    return {
+        "email": account.email,
+        "role": account.role,
+        "address": account.address,
+        "reward_points": account.reward_points,
+        "locked": account.locked,
+        "consecutive login fails": account.consecutive_password_fails,
+    }
