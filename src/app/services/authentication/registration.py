@@ -39,8 +39,7 @@ class Registration:
                 raise ValueError(f"Invalid password. {MAX_FAILS - fails} attempts remaining.")
             else: 
                 raise ValueError("Invalid password.")
-        
-        self.reset_password.reset_login_fails(username)
+
         return token
 
 
