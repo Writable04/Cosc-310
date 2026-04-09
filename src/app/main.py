@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app import __version__
-from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery, favourites
+from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery, review, favourites
 from app.schemas.baseSchema import HealthResponse
 from fastapi.middleware.cors import CORSMiddleware
 
