@@ -9,8 +9,18 @@ class ItemStorage(CSVStorage):
         super().__init__(path,fields)
     
     def new_item(self, item: Item):
-        self.write_row(item.dict())
-        return item
+        data = item.dict()
+
+        if int(data.get("item_id", 0)) == 0:
+            rows = self.read_all()
+            if rows:
+                max_id = max(int(row["item_id"]) for row in rows)
+                data["item_id"] = max_id + 1
+            else:
+                data["item_id"] = 1
+
+        self.write_row(data)
+        return Item(**data)
 
     def find_item(self, item_id: int):
         row = self.find_by("item_id", str(item_id))
