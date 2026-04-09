@@ -26,13 +26,8 @@
     "username": "leyla",
     "role": "admin",
     "address": "975 Academy Way, Kelowna, BC",
-<<<<<<< HEAD
     "reward_points": 0,
     "redeem_points": false
-=======
-    "reward_points": 8,
-    "redeem_points": true
-    "address": "975 Academy Way, Kelowna, BC"
   },
   "tomiuser1": {
     "email": "tomidaisy@gmail.com",
@@ -44,7 +39,8 @@
     "consecutive_password_fails": 0,
     "locked": false,
     "one_time_code": 398894,
-    "code_timestamp": 1775634573.305854
->>>>>>> 6081d5b6e7b25d46b733d028459139557a3bb3d3
+    "code_timestamp": 1775634573.305854,
+    "reward_points": 0,
+    "redeem_points": false
   }
 }
