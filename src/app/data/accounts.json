@@ -26,5 +26,18 @@
     "address": "975 Academy Way, Kelowna, BC",
     "reward_points": 8,
     "redeem_points": true
+    "address": "975 Academy Way, Kelowna, BC"
+  },
+  "tomiuser1": {
+    "email": "tomidaisy@gmail.com",
+    "token": "f7d327e6-02c2-45b4-b992-72b83560d930",
+    "password": "$2b$12$fo8JIYU52NboF0uG9P0qXeeeO5lOnu0YXLSaBX2ctZWDcJrEXuPLO",
+    "username": "tomiuser1",
+    "role": "Customer",
+    "address": "",
+    "consecutive_password_fails": 0,
+    "locked": false,
+    "one_time_code": 398894,
+    "code_timestamp": 1775634573.305854
   }
 }

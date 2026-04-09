@@ -16,7 +16,7 @@ def sample_item():
     return Item.model_construct(
         item_id=1,
         name="Burger",
-        price=9.99,
+        price="9.99",
         menu_id=5
     )
 
