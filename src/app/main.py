@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app import __version__
-from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery, favourites
+from app.routers import authentication, dataset, notifications, cart, payment, checkout, querys, delivery, favourites, reset_password
 from app.schemas.baseSchema import HealthResponse
 
 app = FastAPI(
@@ -21,3 +21,4 @@ app.include_router(payment.router, prefix="/payment")
 app.include_router(checkout.router, prefix="/checkout")
 app.include_router(delivery.router, prefix="/delivery")
 app.include_router(favourites.router, prefix="/favourites")
+app.include_router(reset_password.router, prefix="/reset_password")

@@ -39,3 +39,4 @@ htmlcov/
 # Misc
 .DS_Store
 *.log
+tests/test_reset_password.py
