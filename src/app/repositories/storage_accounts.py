@@ -49,3 +49,27 @@ class AccountsStorage(Storage[AccountInfo]):
             return None
 
         return AccountInfo(**data).address
+
+    def get_redeem_choice(self, username: str) -> bool:
+        data = self.read(username)
+        if data is None:
+            return False
+        return AccountInfo(**data).redeem_points
+ 
+    def get_reward_points(self, username: str) -> int:
+        data = self.read(username)
+        if data is None:
+            return 0
+        return AccountInfo(**data).reward_points
+ 
+    def add_reward_points(self, username: str, points: int) -> int:
+        current = self.get_reward_points(username)
+        new_total = current + points
+        self.update(username, {"reward_points": new_total})
+        return new_total
+ 
+    def deduct_reward_points(self, username: str, points: int) -> int:
+        current = self.get_reward_points(username)
+        new_total = max(current - points, 0)
+        self.update(username, {"reward_points": new_total})
+        return new_total

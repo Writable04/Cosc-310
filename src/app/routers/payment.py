@@ -5,7 +5,8 @@ from app.schemas.paymentSchema import (
     SavedPaymentMethod,
 )
 from app.services.payment.payment import PaymentService
-
+from app.routers.dependencies import accounts_storage, require_auth, cart_storage, cart_storage
+ 
 router = APIRouter()
 ps = PaymentService()
 
@@ -30,3 +31,34 @@ def set_default_payment_method(username: str, method_id: str):
     if not ps.set_default_method(username, method_id):
         raise HTTPException(status_code=404, detail="Payment method not found.")
     return {"detail": "Default payment method updated."}
+
+@router.get("/reward-points", response_model=dict)
+def get_reward_points(username: str):
+    points = accounts_storage.get_reward_points(username)
+    return {
+        "username": username,
+        "reward_points": points,
+        "discount_value": round(points / 20, 2),
+    }
+
+@router.post("/redeem-points/choice", response_model=dict)
+def set_redeem_points_choice(username: str, redeem: bool):
+    """User chooses whether to apply reward points or not upon checkout."""
+    accounts_storage.update(username, {"redeem_points": redeem})
+    points = accounts_storage.get_reward_points(username)
+    cart = cart_storage.loadUserCart(username)
+    cart_total = cart.checkout_total if cart.checkout_total > 0 else cart.subtotal
+ 
+    if not redeem or points == 0:
+        return {"username": username, "redeem_points": False, "discount": 0.0, "discounted_total": round(cart_total, 2)}
+ 
+    full_discount = round(points / 20, 2)
+    discount = min(full_discount, cart_total)
+ 
+    return {
+        "username": username,
+        "redeem_points": True,
+        "reward_points": points,
+        "discount": round(discount, 2)
+    }
+ 
