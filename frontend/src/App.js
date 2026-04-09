@@ -318,6 +318,7 @@ function App() {
   const [draftAddress, setDraftAddress] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetValidatedPassword, setResetValidatedPassword] = useState("");
   const [data, setData] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
@@ -551,9 +552,7 @@ function App() {
     } catch (err) {
       console.error(err);
       const nextError = err.message || "Authentication failed.";
-      const shouldOfferReset = authMode === "login" && nextError === "Invalid password.";
       setError(nextError);
-      setShowResetPasswordButton(shouldOfferReset);
       setIsLoading(false);
       return;
     }
@@ -639,6 +638,16 @@ function App() {
     setFavouritesNotice("");
   };
 
+  const handleLoggedInReset = () => {
+    setShowAccountMenu(false); // Close the dropdown menu
+    setDraftUsername(username); // Pre-fill their logged-in username
+    setShowAuthGate(true); // Open the auth panel
+    setAuthMode("login"); // Ensure it's on the login tab
+    setShowResetPasswordButton(true); // Reveal the reset fields
+    setAuthNotice("Click 'Reset password' below to send a code to your email.");
+    setError("");
+  };
+
   const handleAuthGateBack = () => {
     if (hasLoadedLiveData) {
       setDraftUsername(username);
@@ -695,10 +704,15 @@ function App() {
     const nextUsername = draftUsername.trim();
     const nextCode = resetCode.trim();
     const nextPassword = resetNewPassword.trim();
+    const nextValidatedPassword = resetValidatedPassword.trim();
 
-    if (!nextUsername || !nextCode || !nextPassword) {
-      setError("Enter your username, one-time code, and new password.");
+    if (!nextUsername || !nextCode || !nextPassword || !nextValidatedPassword) {
+      setError("Enter your username, one-time code, and new password twice.");
       return;
+    }
+
+    if (nextPassword !== nextValidatedPassword){
+      setError("Passwords do not match.")
     }
 
     setIsResettingPassword(true);
@@ -707,7 +721,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/reset_password/${encodeURIComponent(nextUsername)}/${encodeURIComponent(nextPassword)}/${encodeURIComponent(nextPassword)}/${encodeURIComponent(nextCode)}`,
+        `${API_BASE_URL}/reset_password/${encodeURIComponent(nextUsername)}/${encodeURIComponent(nextPassword)}/${encodeURIComponent(nextValidatedPassword)}/${encodeURIComponent(nextCode)}`,
         { method: "POST" }
       );
 
@@ -721,6 +735,7 @@ function App() {
       setDraftPassword("");
       setResetCode("");
       setResetNewPassword("");
+      setResetValidatedPassword("");
       setShowResetPasswordButton(false);
     } catch (err) {
       console.error(err);
@@ -2329,7 +2344,17 @@ function App() {
                 }}
               />
             </label>
-
+            
+            {authMode === "login" && !showResetPasswordButton ? (
+              <button
+                type="button"
+                className="ghost-action"
+                onClick={() => setShowResetPasswordButton(true)}
+                style={{ display: 'block', marginTop: '8px', marginBottom: '16px', textAlign: 'left', padding: '0' }}
+              >
+                Forgot password?
+              </button>
+            ) : null}
             {authMode === "register" ? (
               <>
                 <label>
@@ -2405,7 +2430,7 @@ function App() {
                   onClick={handleResetPasswordRequest}
                   disabled={isResettingPassword || isLoading}
                 >
-                  {isResettingPassword ? "Sending reset code..." : "Reset password"}
+                  {isResettingPassword ? "Sending reset code..." : "Email me a single-use code"}
                 </button>
 
                 <label>
@@ -2425,6 +2450,16 @@ function App() {
                     placeholder="Enter new password"
                     value={resetNewPassword}
                     onChange={(e) => setResetNewPassword(e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Validated password
+                  <input
+                    type="password"
+                    placeholder="Re-enter new password"
+                    value={resetValidatedPassword}
+                    onChange={(e) => setResetValidatedPassword(e.target.value)}
                   />
                 </label>
 
@@ -2519,6 +2554,9 @@ function App() {
                     <button className="account-menu-item" onClick={openDeliveriesPanel} type="button">
                       My orders
                     </button>
+                  <button className="account-menu-item" onClick={handleLoggedInReset} type="button">
+                    Reset password
+                  </button>
                     <button className="account-menu-item" onClick={handleChangeAccount} type="button">
                       Change login
                     </button>
