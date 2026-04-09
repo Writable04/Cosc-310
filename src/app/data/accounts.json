@@ -35,12 +35,12 @@
     "password": "$2b$12$fo8JIYU52NboF0uG9P0qXeeeO5lOnu0YXLSaBX2ctZWDcJrEXuPLO",
     "username": "tomiuser1",
     "role": "Customer",
-    "address": "",
+    "address": "975 Academy Way, Kelowna, BC",
     "consecutive_password_fails": 0,
     "locked": false,
     "one_time_code": 398894,
     "code_timestamp": 1775634573.305854,
-    "reward_points": 0,
+    "reward_points": 20,
     "redeem_points": false
   }
 }

@@ -308,6 +308,7 @@ function App() {
     email: "",
     role: "",
     address: "",
+    rewardPoints: 0,
   });
   const [authMode, setAuthMode] = useState("login");
   const [draftUsername, setDraftUsername] = useState("");
@@ -356,6 +357,9 @@ function App() {
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState("");
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
+  const [checkoutRewardPoints, setCheckoutRewardPoints] = useState(0);
+  const [checkoutPointsDiscount, setCheckoutPointsDiscount] = useState(0);
+  const [useRewardPoints, setUseRewardPoints] = useState(false);
   const [checkoutResult, setCheckoutResult] = useState(null);
   const [checkoutOrderSummary, setCheckoutOrderSummary] = useState(null);
   const [showDeliveries, setShowDeliveries] = useState(false);
@@ -589,6 +593,7 @@ function App() {
             email: authMode === "register" ? draftEmail.trim() : "",
             role: authMode === "register" ? draftRole : "",
             address: authMode === "register" ? draftAddress.trim() : "",
+            rewardPoints: 0,
           });
         }
 
@@ -733,22 +738,29 @@ function App() {
   const refreshProfile = useCallback(async (nextUsername = username, nextToken = token) => {
     const cleanUsername = encodeURIComponent(nextUsername.trim());
     const cleanToken = encodeURIComponent(nextToken.trim());
-    const response = await fetch(
-      `${API_BASE_URL}/authentication/account/${cleanUsername}/${cleanToken}`
-    );
+    const [profileResponse, rewardPointsResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/authentication/account/${cleanUsername}/${cleanToken}`),
+      fetch(`${API_BASE_URL}/payment/reward-points?username=${cleanUsername}`),
+    ]);
 
-    if (!response.ok) {
-      throw new Error(`Profile request failed with status ${response.status}`);
+    if (!profileResponse.ok) {
+      throw new Error(`Profile request failed with status ${profileResponse.status}`);
     }
 
-    const profilePayload = await response.json();
+    if (!rewardPointsResponse.ok) {
+      throw new Error(`Reward points request failed with status ${rewardPointsResponse.status}`);
+    }
+
+    const profilePayload = await profileResponse.json();
+    const rewardPointsPayload = await rewardPointsResponse.json();
     setUserProfile({
       username: nextUsername,
       email: profilePayload.email || "",
       role: profilePayload.role || "",
       address: profilePayload.address || "",
+      rewardPoints: Number(rewardPointsPayload.reward_points || 0),
     });
-    return profilePayload;
+    return { ...profilePayload, reward_points: Number(rewardPointsPayload.reward_points || 0) };
   }, [token, username]);
 
   const refreshCart = useCallback(async () => {
@@ -968,6 +980,17 @@ function App() {
     }
   }, [refreshMyDeliveries]);
 
+  const resetRewardPointsChoice = useCallback(() => {
+    const cleanUsername = encodeURIComponent(username.trim());
+    if (!cleanUsername) {
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/payment/redeem-points/choice?username=${cleanUsername}&redeem=false`, {
+      method: "POST",
+    }).catch(() => {});
+  }, [username]);
+
   const openCheckoutPanel = useCallback(async () => {
     if (!username.trim() || !token.trim()) {
       setCheckoutError("Log in before checking out.");
@@ -980,6 +1003,10 @@ function App() {
     setCheckoutOrderSummary(null);
     setPaymentForm(emptyPaymentForm());
     setSavePaymentMethod(false);
+    setCheckoutRewardPoints(0);
+    setCheckoutPointsDiscount(0);
+    setUseRewardPoints(false);
+    resetRewardPointsChoice();
     setShowCheckout(true);
     setIsCheckoutLoading(true);
 
@@ -990,14 +1017,26 @@ function App() {
         return;
       }
 
-      await loadPaymentMethods();
+      const cleanUsername = encodeURIComponent(username.trim());
+      const [_, rewardPointsResponse] = await Promise.all([
+        loadPaymentMethods(),
+        fetch(`${API_BASE_URL}/payment/reward-points?username=${cleanUsername}`),
+      ]);
+
+      if (!rewardPointsResponse.ok) {
+        const failure = await rewardPointsResponse.json().catch(() => null);
+        throw new Error(failure?.detail || `Reward points request failed with status ${rewardPointsResponse.status}`);
+      }
+
+      const rewardPointsPayload = await rewardPointsResponse.json();
+      setCheckoutRewardPoints(Number(rewardPointsPayload.reward_points || 0));
     } catch (err) {
       console.error(err);
       setCheckoutError("We couldn't load checkout details right now.");
     } finally {
       setIsCheckoutLoading(false);
     }
-  }, [loadPaymentMethods, refreshCart, token, username]);
+  }, [loadPaymentMethods, refreshCart, resetRewardPointsChoice, token, username]);
 
   const handleCloseCheckout = useCallback(() => {
     setShowCheckout(false);
@@ -1005,8 +1044,44 @@ function App() {
     setCheckoutNotice("");
     setCheckoutResult(null);
     setCheckoutOrderSummary(null);
+    setCheckoutRewardPoints(0);
+    setCheckoutPointsDiscount(0);
+    setUseRewardPoints(false);
+    resetRewardPointsChoice();
     setIsCheckoutLoading(false);
-  }, []);
+  }, [resetRewardPointsChoice]);
+
+  const handleRewardPointsChoice = useCallback(async (shouldRedeem) => {
+    if (!username.trim()) {
+      setCheckoutError("Log in before applying reward points.");
+      return;
+    }
+
+    setCheckoutError("");
+    setCheckoutNotice("");
+    setUseRewardPoints(shouldRedeem);
+
+    try {
+      const cleanUsername = encodeURIComponent(username.trim());
+      const response = await fetch(
+        `${API_BASE_URL}/payment/redeem-points/choice?username=${cleanUsername}&redeem=${shouldRedeem}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.detail || `Reward points update failed with status ${response.status}`);
+      }
+
+      const payload = await response.json();
+      setCheckoutPointsDiscount(Number(payload?.discount || 0));
+    } catch (err) {
+      console.error(err);
+      setUseRewardPoints(!shouldRedeem);
+      setCheckoutPointsDiscount(shouldRedeem ? 0 : Math.min(checkoutRewardPoints / 20, Number(cart?.checkout_total || 0)));
+      setCheckoutError(err.message || "We couldn't update your reward points choice.");
+    }
+  }, [cart?.checkout_total, checkoutRewardPoints, username]);
 
   const handleCheckoutSubmit = useCallback(async () => {
     if (!cart?.items?.length) {
@@ -1094,6 +1169,9 @@ function App() {
       const checkoutPayload = await checkoutResponse.json();
       setCheckoutResult(checkoutPayload);
       setCheckoutNotice(checkoutPayload.message || "Checkout completed successfully.");
+      setCheckoutRewardPoints(Number(checkoutPayload.reward_points_balance || 0));
+      setCheckoutPointsDiscount(0);
+      setUseRewardPoints(false);
 
       if (checkoutPayload.order_id) {
         const summaryResponse = await fetch(
@@ -2515,6 +2593,10 @@ function App() {
                         <span>Address</span>
                         <strong>{userProfile.address || "Unavailable"}</strong>
                       </p>
+                      <p>
+                        <span>Reward points</span>
+                        <strong>{userProfile.rewardPoints}</strong>
+                      </p>
                     </div>
                     <button className="account-menu-item" onClick={openDeliveriesPanel} type="button">
                       My orders
@@ -3757,9 +3839,9 @@ function App() {
                       <p>Subtotal</p>
                       <strong>${Number(cart?.subtotal || 0).toFixed(2)}</strong>
                       <p>Discount</p>
-                      <strong>${Number(cart?.totalDiscount || 0).toFixed(2)}</strong>
+                      <strong>${(Number(cart?.totalDiscount || 0) + Number(checkoutPointsDiscount || 0)).toFixed(2)}</strong>
                       <p>Cart total</p>
-                      <strong>${Number(cart?.checkout_total || 0).toFixed(2)}</strong>
+                      <strong>${Math.max(Number(cart?.checkout_total || 0) - Number(checkoutPointsDiscount || 0), 0).toFixed(2)}</strong>
                     </div>
                     <p className="management-helper">
                       Delivery fee and tax are calculated by the backend during checkout using your saved account address.
@@ -3773,6 +3855,35 @@ function App() {
                       >
                         {isCheckoutLoading ? "Processing..." : "Place order"}
                       </button>
+                    </div>
+                    <div className="checkout-rewards-panel">
+                      <p className="checkout-rewards-balance">
+                        Reward points available: <strong>{checkoutRewardPoints}</strong>
+                      </p>
+                      <p className="management-helper">
+                        20 points = $1.00 off your order.
+                      </p>
+                      <p className="management-helper">
+                        Would you like to use your reward points on this order?
+                      </p>
+                      <div className="checkout-rewards-actions">
+                        <button
+                          type="button"
+                          className={useRewardPoints ? "chip active" : "chip"}
+                          onClick={() => handleRewardPointsChoice(true)}
+                          disabled={isCheckoutLoading || checkoutRewardPoints <= 0}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          className={!useRewardPoints ? "chip active" : "chip"}
+                          onClick={() => handleRewardPointsChoice(false)}
+                          disabled={isCheckoutLoading}
+                        >
+                          No
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
