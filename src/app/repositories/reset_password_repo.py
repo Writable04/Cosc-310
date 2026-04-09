@@ -19,6 +19,12 @@ class ResetPassword():
         self.storage.write(username, data)
         return AccountInfo(**data).consecutive_password_fails
     
+    def reset_login_fails(self, username:str):
+        data = self.storage.read(username)
+        data["consecutive_password_fails"] == 0
+        self.storage.write(username, data)
+        return AccountInfo(**data).consecutive_password_fails
+    
     def reset_password(self, username: str, new_password: str, validated_password: str, one_time_code: int):
         EXPIRY_SECONDS = 600 # ten minutes
         data = self.storage.read(username)

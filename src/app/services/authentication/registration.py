@@ -39,6 +39,7 @@ class Registration:
                 raise ValueError(f"Invalid password. {MAX_FAILS - fails} attempts remaining.")
             else: 
                 raise ValueError("Invalid password.")
+
         return token
 
 
